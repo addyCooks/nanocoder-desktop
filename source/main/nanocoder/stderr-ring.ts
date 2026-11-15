@@ -62,9 +62,40 @@ export function redact(
 	}
 	if (homeDir && homeDir.length > 1) {
 		const ignoreCase = platform === 'win32' || platform === 'darwin';
-		result = replaceAll(result, homeDir, '~', ignoreCase);
+		for (const spelling of homeSpellings(homeDir))
+			result = replaceAll(result, spelling, '~', ignoreCase);
 	}
 	return result;
+}
+
+// The spellings a path takes in a line: as given, escaped inside JSON or util.inspect
+// output, with forward slashes, and percent-encoded in a file URL. This never throws,
+// because redaction runs on every line and a home directory can hold any character.
+function homeSpellings(homeDir: string): Set<string> {
+	const forward = homeDir.replaceAll('\\', '/');
+	const spellings = new Set([
+		homeDir,
+		homeDir.replaceAll('\\', '\\\\'),
+		forward,
+	]);
+	try {
+		spellings.add(encodeURI(forward));
+	} catch {}
+	try {
+		// A stack frame spells the path as `pathToFileURL` does, which also escapes `#`, `?`
+		// and `%`, and some tools escape the colon after a drive letter as well.
+		const rooted = forward.startsWith('/');
+		const escaped = forward
+			.replace(/^\//, '')
+			.replaceAll('%', '%25')
+			.replaceAll('#', '%23')
+			.replaceAll('?', '%3F');
+		const url = new URL(`file:///${escaped}`).pathname.slice(1);
+		const path = rooted ? `/${url}` : url;
+		spellings.add(path);
+		spellings.add(path.replace(/^([a-z]):/i, '$1%3A'));
+	} catch {}
+	return spellings;
 }
 
 function truncate(line: string): string {

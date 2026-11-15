@@ -1,4 +1,5 @@
 import test from 'ava';
+import {diagnosticLine} from '@/main/nanocoder/diagnostics';
 import {redact, StderrRing} from '@/main/nanocoder/stderr-ring';
 
 const cases: Array<[string, string]> = [
@@ -46,6 +47,76 @@ test('replaces the home directory', t => {
 	t.is(
 		redact('open C:\\USERS\\Sam\\a.ts', 'C:\\Users\\Sam', 'win32'),
 		'open ~\\a.ts',
+	);
+});
+
+test('replaces the home directory however a Windows path is spelled', t => {
+	const home = 'C:\\Users\\Sam Lee';
+	for (const [input, expected] of [
+		["open 'C:\\Users\\Sam Lee\\a.ts'", "open '~\\a.ts'"],
+		["{ path: 'C:\\\\Users\\\\Sam Lee\\\\a.ts' }", "{ path: '~\\\\a.ts' }"],
+		['{"cwd":"C:\\\\Users\\\\Sam Lee\\\\a"}', '{"cwd":"~\\\\a"}'],
+		['at file:///C:/Users/Sam%20Lee/x.js:1:1', 'at file:///~/x.js:1:1'],
+		['open c:/users/sam lee/a.ts', 'open ~/a.ts'],
+	])
+		t.is(redact(input, home, 'win32'), expected);
+});
+
+test('replaces the home directory in a file URL however the account name is escaped', t => {
+	for (const [home, platform, input, expected] of [
+		[
+			'C:\\Users\\Sam#1',
+			'win32',
+			'at file:///C:/Users/Sam%231/x.js',
+			'at file:///~/x.js',
+		],
+		[
+			'C:\\Users\\Sam%1',
+			'win32',
+			'at file:///C:/Users/Sam%251/x.js',
+			'at file:///~/x.js',
+		],
+		[
+			'C:\\Users\\a?b',
+			'win32',
+			'at file:///C:/Users/a%3Fb/x.js',
+			'at file:///~/x.js',
+		],
+		[
+			'C:\\Users\\Sam',
+			'win32',
+			'at file:///C%3A/Users/Sam/x.js',
+			'at file:///~/x.js',
+		],
+		[
+			'C:\\Users\\J\u00fcrgen',
+			'win32',
+			'at file:///C:/Users/J%C3%BCrgen/x.js',
+			'at file:///~/x.js',
+		],
+		['/home/a#b', 'linux', 'at file:///home/a%23b/x.js', 'at file://~/x.js'],
+	] as const)
+		t.is(redact(input, home, platform), expected, input);
+});
+
+test('redaction never throws, whatever characters the home directory holds', t => {
+	const home = 'C:\\Users\\a\ud800b';
+	t.notThrows(() => redact('open C:\\Users\\a\ud800b\\f', home, 'win32'));
+	t.is(redact('open C:\\Users\\a\ud800b\\f', home, 'win32'), 'open ~\\f');
+	t.is(
+		redact('open C:\\\\Users\\\\a\ud800b\\\\f', home, 'win32'),
+		'open ~\\\\f',
+	);
+});
+
+test('the startup record survives redaction when the project is under the home directory', t => {
+	const home = 'C:\\Users\\Sam';
+	const root = 'C:\\Users\\Sam\\proj';
+	const ring = new StderrRing({homeDir: home});
+	ring.append(JSON.stringify({started: true, pid: 4242, cwd: root}));
+	t.is(
+		diagnosticLine(ring.lines()[0], redact(root, home, 'win32')),
+		'{"started":true,"pid":4242,"cwd":"~\\\\proj"}',
 	);
 });
 
