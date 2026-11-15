@@ -33,10 +33,15 @@ const cases: Array<[string, string]> = [
 		'GET https://api.example.com/v1?key=[redacted]&x=1',
 	],
 	[
-		'-----BEGIN PRIVATE KEY----- MIIEvQIBADAN -----END PRIVATE KEY-----',
+		[
+			'-----BEGIN PRIVATE KEY-----',
+			'MIIEvQIBADAN',
+			'-----END PRIVATE KEY-----',
+		].join(' '),
 		'[redacted]',
 	],
 	['key -----BEGIN RSA PRIVATE KEY-----', 'key [redacted]'],
+	['privateKey: abc123', 'privateKey: [redacted]'],
 ];
 
 for (const [input, expected] of cases) {
@@ -162,6 +167,89 @@ test('ignores a root home directory', t => {
 test('leaves words that only resemble a secret name alone', t => {
 	const line = 'hotkey: x, monkey=1, cookies: 3, key: lookup failed';
 	t.is(redact(line), line);
+});
+
+test('leaves the names of keys that are not secrets alone', t => {
+	const line =
+		'primary_key=id sort-key: asc cache_key=users public-key: ssh-rsa';
+	t.is(redact(line), line);
+});
+
+test('a line that only mentions a private key header does not blank the lines after it', t => {
+	const ring = new StderrRing();
+	ring.write(
+		[
+			'error: expected -----BEGIN PRIVATE KEY----- header',
+			'server listening on 8080',
+			'request GET /health 200',
+			'',
+		].join('\n'),
+	);
+	t.deepEqual(ring.lines(), [
+		'error: expected [redacted]',
+		'server listening on 8080',
+		'request GET /health 200',
+	]);
+});
+
+test('a private key header with no footer stops blanking after the longest key', t => {
+	const ring = new StderrRing();
+	const body = 'A'.repeat(64);
+	ring.write(
+		[
+			'-----BEGIN PRIVATE KEY-----',
+			...Array.from({length: 600}, () => body),
+			'after',
+			'',
+		].join('\n'),
+	);
+	const lines = ring.lines();
+	t.is(lines.at(-1), 'after');
+	t.is(lines[1], '[redacted]');
+});
+
+test('blanks a private key written in pieces, with prefixed lines and armor headers', t => {
+	const ring = new StderrRing();
+	ring.write('-----BEGIN PGP PRIV');
+	ring.write('ATE KEY BLOCK-----\nVersion: GnuPG v2\n');
+	ring.write(`2026-11-15 ERROR ${'Zm9vYmFy'.repeat(8)}\n=abcd\n`);
+	ring.write('-----END PGP PRIVATE KEY BLOCK-----\ndone running\n');
+	t.deepEqual(ring.lines(), [
+		'[redacted]',
+		'[redacted]',
+		'[redacted]',
+		'[redacted]',
+		'[redacted]',
+		'done running',
+	]);
+});
+
+test('blanks the lines of a private key whose header sat in an overlong line', t => {
+	const ring = new StderrRing();
+	ring.write(`${'x'.repeat(5000)} -----BEGIN PRIVATE KEY-----`);
+	ring.write(
+		'\nMIIEvQIBADAN\nKg2oYvBw8Wx3Ig==\n-----END PRIVATE KEY-----\nafter\n',
+	);
+	t.deepEqual(ring.lines(), [
+		'[overlong stderr line omitted]',
+		'[redacted]',
+		'[redacted]',
+		'[redacted]',
+		'after',
+	]);
+});
+
+test('blanks the lines of a private key whose header sat in the dropped end of a long line', t => {
+	const ring = new StderrRing();
+	ring.write('x'.repeat(5000));
+	ring.write(' -----BEGIN PRIVATE KEY-----\n');
+	ring.write('MIIEvQIBADAN\n-----END PRIVATE KEY-----\nafter\n');
+	t.deepEqual(ring.lines(), [
+		'[overlong stderr line omitted]',
+		'[redacted]',
+		'[redacted]',
+		'after',
+	]);
 });
 
 test('blanks every line of a private key between its header and footer', t => {
