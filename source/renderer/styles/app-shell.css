@@ -72,6 +72,9 @@
 
 .shell-breadcrumb {
 	margin: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 	font-size: 10px;
 	line-height: 16px;
 }

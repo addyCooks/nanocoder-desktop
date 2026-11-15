@@ -164,6 +164,38 @@ test('ACP readiness is replayed on reopening after a renderer reload', async () 
 	await expect(page.locator('.footer-acp--success')).toBeVisible();
 });
 
+test('the window will not shrink until the header clips, and a long project name stays out of the header actions (QA-04)', async () => {
+	await open(project(`long-${'x'.repeat(120)}`));
+	try {
+		await app.evaluate(({BrowserWindow}) => {
+			BrowserWindow.getAllWindows()[0].setContentSize(320, 700);
+		});
+		await expect
+			.poll(() =>
+				page.evaluate(() => {
+					const actions = document
+						.querySelector('.shell-header-actions')
+						?.getBoundingClientRect();
+					const name = document.querySelector('.shell-breadcrumb');
+					if (!actions || !name) throw new Error('Missing header region');
+					return {
+						narrow: innerWidth < 700,
+						actionsFit: actions.right <= innerWidth,
+						// A name too long for its line must be clipped, not painted over the actions.
+						nameContained:
+							name.scrollWidth <= name.clientWidth ||
+							getComputedStyle(name).overflowX !== 'visible',
+					};
+				}),
+			)
+			.toEqual({narrow: true, actionsFit: true, nameContained: true});
+	} finally {
+		await app.evaluate(({BrowserWindow}) => {
+			BrowserWindow.getAllWindows()[0].setContentSize(1240, 900);
+		});
+	}
+});
+
 test('shell geometry and pinned composer follow all three widths without an empty inspector', async () => {
 	await open(project('layout'));
 	const stream = page.locator('main.shell-stream');

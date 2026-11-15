@@ -171,6 +171,8 @@ async function finishSmokeTest(): Promise<void> {
 function createWindow(): void {
 	const window = new BrowserWindow({
 		title: APP_NAME,
+		// Below about 560px the header actions leave the window.
+		minWidth: 640,
 		show: false,
 		webPreferences: {
 			preload: preloadPath,
