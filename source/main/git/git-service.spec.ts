@@ -390,6 +390,38 @@ test('SEC-06 GIT-11 a repository that configures fsmonitor, an external diff, te
 		t.false(existsSync(marker(name)), `${name} must not run`);
 });
 
+test('SEC-06 GIT-11 a filter driver whose name holds an equals sign is refused, never run', async t => {
+	const f = fixture(t);
+	const marker = path.join(f.base, 'ran-clean');
+	const script = path.join(f.base, 'record.js');
+	writeFileSync(
+		script,
+		"require('node:fs').writeFileSync(process.argv[2], 'ran');process.stdout.write('')\n",
+	);
+	const posix = (value: string) => value.replaceAll('\\', '/');
+	f.write('filt.ext', 'one\n');
+	f.write('.gitattributes', 'filt.ext filter=a=b\n');
+	f.commit();
+	git(
+		f.root,
+		'config',
+		'filter.a=b.clean',
+		`"${posix(process.execPath)}" "${posix(script)}" "${posix(marker)}"`,
+	);
+	const later = new Date(Date.now() + 60_000);
+	utimesSync(path.join(f.root, 'filt.ext'), later, later);
+	// Control: plain Git runs this driver, so the test can fail.
+	git(f.root, 'status', '--porcelain');
+	t.true(existsSync(marker), 'control: clean filter runs');
+	rmSync(marker, {force: true});
+	f.service.invalidate('project');
+	await t.throwsAsync(status(f), {code: 'DENIED'});
+	await t.throwsAsync(f.service.diff('project', 'filt.ext', false), {
+		code: 'DENIED',
+	});
+	t.false(existsSync(marker), 'the clean filter must not run');
+});
+
 test('SEC-06 a Git program inside the project is never used', async t => {
 	const f = fixture(t);
 	const found = {
