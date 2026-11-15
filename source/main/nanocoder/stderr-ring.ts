@@ -62,7 +62,16 @@ export function redact(
 	}
 	if (homeDir && homeDir.length > 1) {
 		const ignoreCase = platform === 'win32' || platform === 'darwin';
-		result = replaceAll(result, homeDir, '~', ignoreCase);
+		// Every spelling a path takes in a line: as given, escaped inside JSON or
+		// util.inspect output, with forward slashes, and percent-encoded in a file URL.
+		const forward = homeDir.replaceAll('\\', '/');
+		for (const spelling of new Set([
+			homeDir,
+			homeDir.replaceAll('\\', '\\\\'),
+			forward,
+			encodeURI(forward),
+		]))
+			result = replaceAll(result, spelling, '~', ignoreCase);
 	}
 	return result;
 }
