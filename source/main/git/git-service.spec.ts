@@ -9,6 +9,7 @@ import {
 	renameSync,
 	rmSync,
 	symlinkSync,
+	utimesSync,
 	writeFileSync,
 } from 'node:fs';
 import {tmpdir} from 'node:os';
@@ -340,7 +341,7 @@ test('GIT-01 a project folder inside a larger repository shows only its own chan
 	t.is(diff.kind, 'text');
 });
 
-test('SEC-06 GIT-11 a repository that configures fsmonitor, an external diff or text conversion runs none of them', async t => {
+test('SEC-06 GIT-11 a repository that configures fsmonitor, an external diff, text conversion or a clean filter runs none of them', async t => {
 	const f = fixture(t);
 	const marker = (name: string) => path.join(f.base, `ran-${name}`);
 	const script = path.join(f.base, 'record.js');
@@ -353,19 +354,29 @@ test('SEC-06 GIT-11 a repository that configures fsmonitor, an external diff or 
 		`"${posix(process.execPath)}" "${posix(script)}" "${posix(marker(name))}"`;
 	f.write('doc.ext', 'one\n');
 	f.write('conv.up', 'one\n');
-	f.write('.gitattributes', 'doc.ext diff=evil\nconv.up diff=conv\n');
+	f.write('filt.ext', 'one\n');
+	f.write(
+		'.gitattributes',
+		'doc.ext diff=evil\nconv.up diff=conv\nfilt.ext filter=evil.v2\n',
+	);
 	f.commit();
 	git(f.root, 'config', 'core.fsmonitor', command('fsmonitor'));
 	git(f.root, 'config', 'diff.evil.command', command('external'));
 	git(f.root, 'config', 'diff.conv.textconv', command('textconv'));
+	git(f.root, 'config', 'filter.evil.v2.clean', command('clean'));
 	f.write('doc.ext', 'two\n');
 	f.write('conv.up', 'two\n');
+	// A newer modified time on identical content makes Git run the clean filter to compare it.
+	const later = new Date(Date.now() + 60_000);
+	utimesSync(path.join(f.root, 'filt.ext'), later, later);
 	// Control: plain Git does run the hostile configuration, so this test can fail.
 	git(f.root, 'diff', '--', 'doc.ext');
 	git(f.root, 'diff', '--textconv', '--', 'conv.up');
+	git(f.root, 'status', '--porcelain');
 	t.true(existsSync(marker('external')), 'control: external diff runs');
 	t.true(existsSync(marker('textconv')), 'control: textconv runs');
-	for (const name of ['external', 'textconv', 'fsmonitor'])
+	t.true(existsSync(marker('clean')), 'control: clean filter runs');
+	for (const name of ['external', 'textconv', 'fsmonitor', 'clean'])
 		rmSync(marker(name), {force: true});
 	f.service.invalidate('project');
 	const result = await status(f);
@@ -375,8 +386,40 @@ test('SEC-06 GIT-11 a repository that configures fsmonitor, an external diff or 
 	t.is(external.kind, 'text');
 	t.is(converted.kind, 'text');
 	if (external.kind === 'text') t.regex(external.diff, /^\+two$/m);
-	for (const name of ['external', 'textconv', 'fsmonitor'])
+	for (const name of ['external', 'textconv', 'fsmonitor', 'clean'])
 		t.false(existsSync(marker(name)), `${name} must not run`);
+});
+
+test('SEC-06 GIT-11 a filter driver whose name holds an equals sign is refused, never run', async t => {
+	const f = fixture(t);
+	const marker = path.join(f.base, 'ran-clean');
+	const script = path.join(f.base, 'record.js');
+	writeFileSync(
+		script,
+		"require('node:fs').writeFileSync(process.argv[2], 'ran');process.stdout.write('')\n",
+	);
+	const posix = (value: string) => value.replaceAll('\\', '/');
+	f.write('filt.ext', 'one\n');
+	f.write('.gitattributes', 'filt.ext filter=a=b\n');
+	f.commit();
+	git(
+		f.root,
+		'config',
+		'filter.a=b.clean',
+		`"${posix(process.execPath)}" "${posix(script)}" "${posix(marker)}"`,
+	);
+	const later = new Date(Date.now() + 60_000);
+	utimesSync(path.join(f.root, 'filt.ext'), later, later);
+	// Control: plain Git runs this driver, so the test can fail.
+	git(f.root, 'status', '--porcelain');
+	t.true(existsSync(marker), 'control: clean filter runs');
+	rmSync(marker, {force: true});
+	f.service.invalidate('project');
+	await t.throwsAsync(status(f), {code: 'DENIED'});
+	await t.throwsAsync(f.service.diff('project', 'filt.ext', false), {
+		code: 'DENIED',
+	});
+	t.false(existsSync(marker), 'the clean filter must not run');
 });
 
 test('SEC-06 a Git program inside the project is never used', async t => {

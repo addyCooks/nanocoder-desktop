@@ -25,6 +25,12 @@ const HARDENED = [
 	'color.ui=false',
 ];
 
+// Comparing a work tree file with the index runs the clean, smudge and process
+// commands of its filter driver, so status and diff switch off every driver that
+// any configuration file defines (SEC-06, GIT-11).
+const FILTER_COMMANDS = new Set(['status', 'diff']);
+const FILTER_OFF = ['clean=', 'smudge=', 'process=', 'required=false'];
+
 export interface GitRun {
 	git: string;
 	cwd: string;
@@ -77,39 +83,100 @@ export function gitEnvironment(
 	return env;
 }
 
-export const runGit: GitRunner = (run, args) =>
-	new Promise((resolve, reject) => {
-		const [command] = args;
-		if (!READ_ONLY_COMMANDS.has(command) && command !== '--version')
-			return reject(
-				new IpcFailure(
-					'DENIED',
-					'That Git command is not allowed in the desktop',
-				),
-			);
-		if (
-			command === 'diff' &&
-			!(args.includes('--no-ext-diff') && args.includes('--no-textconv'))
-		)
-			return reject(
-				new IpcFailure(
-					'DENIED',
-					'A diff must turn off external diff and text conversion',
-				),
-			);
-		const prefix = command === '--version' ? [] : HARDENED;
+const spawnOptions = (run: GitRun) => ({
+	cwd: run.cwd,
+	shell: false,
+	timeout: run.timeoutMs,
+	maxBuffer: run.maxBytes,
+	encoding: 'buffer' as const,
+	windowsHide: true,
+	env: gitEnvironment(run.git, process.env),
+});
+
+// One `-c` pair per setting of every filter driver, read with the same hardened environment.
+// Git splits a `-c` argument at its first `=`, so a driver whose name holds one cannot be
+// switched off that way. Such a repository is refused rather than read with the driver on.
+function filterOverrides(run: GitRun): Promise<string[]> {
+	return new Promise((resolve, reject) => {
+		execFile(
+			run.git,
+			['--no-pager', 'config', '-z', '--get-regexp', '^filter\\.'],
+			spawnOptions(run),
+			(error, stdout) => {
+				// Exit code 1 only means that no driver is configured.
+				if (error && (error as {code?: unknown}).code !== 1) {
+					const failure = error as NodeJS.ErrnoException & {
+						killed?: boolean;
+						signal?: string;
+					};
+					if (failure.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER')
+						return reject(
+							new IpcFailure('LIMIT', 'The Git configuration was too large'),
+						);
+					if (failure.killed || failure.signal === 'SIGTERM')
+						return reject(
+							new IpcFailure('LIMIT', 'Git took too long to answer'),
+						);
+					return reject(
+						new IpcFailure(
+							'UNAVAILABLE',
+							'Git could not read its configuration',
+						),
+					);
+				}
+				// Each entry is `key`, a newline, then the value, so the key ends at the first newline.
+				const drivers = new Set<string>();
+				for (const entry of stdout.toString('utf8').split('\0')) {
+					const newline = entry.indexOf('\n');
+					const key = newline === -1 ? entry : entry.slice(0, newline);
+					const end = key.lastIndexOf('.');
+					if (key.startsWith('filter.') && end > 'filter.'.length)
+						drivers.add(key.slice('filter.'.length, end));
+				}
+				if ([...drivers].some(driver => driver.includes('=')))
+					return reject(
+						new IpcFailure(
+							'DENIED',
+							'A Git filter driver has a name that cannot be switched off',
+						),
+					);
+				resolve(
+					[...drivers].flatMap(driver =>
+						FILTER_OFF.flatMap(setting => [
+							'-c',
+							`filter.${driver}.${setting}`,
+						]),
+					),
+				);
+			},
+		);
+	});
+}
+
+export const runGit: GitRunner = async (run, args) => {
+	const [command] = args;
+	if (!READ_ONLY_COMMANDS.has(command) && command !== '--version')
+		throw new IpcFailure(
+			'DENIED',
+			'That Git command is not allowed in the desktop',
+		);
+	if (
+		command === 'diff' &&
+		!(args.includes('--no-ext-diff') && args.includes('--no-textconv'))
+	)
+		throw new IpcFailure(
+			'DENIED',
+			'A diff must turn off external diff and text conversion',
+		);
+	const filters = FILTER_COMMANDS.has(command)
+		? await filterOverrides(run)
+		: [];
+	const prefix = command === '--version' ? [] : [...HARDENED, ...filters];
+	return new Promise((resolve, reject) => {
 		const child = execFile(
 			run.git,
 			[...prefix, ...args],
-			{
-				cwd: run.cwd,
-				shell: false,
-				timeout: run.timeoutMs,
-				maxBuffer: run.maxBytes,
-				encoding: 'buffer',
-				windowsHide: true,
-				env: gitEnvironment(run.git, process.env),
-			},
+			spawnOptions(run),
 			(error, stdout, stderr) => {
 				const text = Buffer.from(stderr ?? '')
 					.toString('utf8')
@@ -135,3 +202,4 @@ export const runGit: GitRunner = (run, args) =>
 			child.stdin?.end(run.input);
 		}
 	});
+};
