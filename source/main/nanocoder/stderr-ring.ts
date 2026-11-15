@@ -2,6 +2,21 @@ const DEFAULT_MAX_BYTES = 256 * 1024;
 const MAX_LINE_LENGTH = 4096;
 const REDACTED = '[redacted]';
 
+// A key's lines are only recognisable by its header and footer, so the pattern
+// takes everything from the header to the footer, or to the end if the footer is absent.
+const PRIVATE_KEY =
+	/-----BEGIN [A-Z ]*PRIVATE KEY(?: BLOCK)?-----(?:[\s\S]*?-----END [A-Z ]*PRIVATE KEY(?: BLOCK)?-----|[\s\S]*)/g;
+
+// A header with no footer after it on the same line starts a key that the next lines continue.
+const KEY_HEADER =
+	/-----BEGIN [A-Z ]*PRIVATE KEY(?: BLOCK)?-----(?![\s\S]*-----END )/;
+// What a line inside a key can look like: base64, a long base64 run behind a log prefix, an
+// armor or legacy PEM header, or the footer. Any other line means the key has ended.
+const KEY_BODY =
+	/^\s*[A-Za-z\d+/=]*\s*$|[A-Za-z\d+/=]{32}|^\s*(?:Proc-Type|DEK-Info|Version|Comment|Hash|Charset):|-----END /i;
+// No real key runs this long, so a header without a footer cannot blank the ring for good.
+const MAX_KEY_LINES = 500;
+
 const SECRET_PATTERNS: ReadonlyArray<[RegExp, string]> = [
 	[/\b([a-z][a-z\d+.-]*:\/\/)[^\s/@]+@/gi, `$1${REDACTED}@`],
 	[
@@ -13,10 +28,14 @@ const SECRET_PATTERNS: ReadonlyArray<[RegExp, string]> = [
 		`$1${REDACTED}`,
 	],
 	[/\bbearer\s+[\w.~+/=-]+/gi, `Bearer ${REDACTED}`],
+	// A cookie value holds spaces and semicolons, so everything after the name goes.
+	[/\b(cookie["']?\s*[:=]\s*["']?).+/gi, `$1${REDACTED}`],
 	[
-		/\b([\w-]*(?:api[_-]?key|token|secret|password|passwd|credential)[\w-]*(?:\\?["'])?\s*[:=]\s*(?:\\?["'])?)[^\s"',;&]+/gi,
+		/\b([\w-]*(?:api[_-]?key|private[_-]?key|(?<!public|primary|sort|cache|foreign|partition|hash|index)[_-]key|token|secret|password|passwd|credential)[\w-]*(?:\\?["'])?\s*[:=]\s*(?:\\?["'])?)[^\s"',;&]+/gi,
 		`$1${REDACTED}`,
 	],
+	[/([?&]key=)[^\s"',;&]+/gi, `$1${REDACTED}`],
+	[PRIVATE_KEY, REDACTED],
 	[
 		/\b(?:sk-[\w-]{16,}|gsk_[\w-]{20,}|hf_[\w-]{20,}|gh[opsur]_\w{20,}|github_pat_\w{20,}|glpat-[\w-]{20,}|xox[abposr]-[\w-]{10,}|AKIA[\dA-Z]{16}|AIza[\w-]{35})/g,
 		REDACTED,
@@ -110,6 +129,8 @@ export class StderrRing {
 	private bytes = 0;
 	private partial = '';
 	private discarding = false;
+	private insideKey = false;
+	private keyLines = 0;
 	private wasTruncated = false;
 
 	get truncated(): boolean {
@@ -123,6 +144,9 @@ export class StderrRing {
 	write(chunk: string): void {
 		if (this.discarding) {
 			const newline = chunk.indexOf('\n');
+			// The dropped part of a long line can hold a key's header, and the lines after it
+			// must still be blanked.
+			this.openKey(newline === -1 ? chunk : chunk.slice(0, newline));
 			if (newline === -1) return;
 			chunk = chunk.slice(newline + 1);
 			this.discarding = false;
@@ -134,7 +158,13 @@ export class StderrRing {
 		}
 		if (this.partial.length > MAX_LINE_LENGTH) {
 			this.wasTruncated = true;
+			const wasInside = this.insideKey;
+			const keepsKey =
+				(wasInside && !this.partial.includes('-----END ')) ||
+				KEY_HEADER.test(this.partial);
 			this.append('[overlong stderr line omitted]');
+			this.insideKey = keepsKey;
+			if (keepsKey && !wasInside) this.keyLines = 0;
 			this.partial = '';
 			this.discarding = true;
 		}
@@ -147,10 +177,30 @@ export class StderrRing {
 		}
 	}
 
+	private openKey(text: string): void {
+		if (!KEY_HEADER.test(text)) return;
+		this.insideKey = true;
+		this.keyLines = 0;
+	}
+
 	append(line: string): void {
 		if (line.trim() === '') return;
 		if (line.length > MAX_LINE_LENGTH) this.wasTruncated = true;
-		let entry = truncate(redact(line, this.options.homeDir));
+		// The lines between a key's header and footer carry no marker of their own.
+		let text = line;
+		if (
+			this.insideKey &&
+			this.keyLines < MAX_KEY_LINES &&
+			KEY_BODY.test(line)
+		) {
+			this.keyLines++;
+			this.insideKey = !line.includes('-----END ');
+			text = REDACTED;
+		} else {
+			this.insideKey = false;
+			this.openKey(line);
+		}
+		let entry = truncate(redact(text, this.options.homeDir));
 		const maxBytes = this.options.maxBytes ?? DEFAULT_MAX_BYTES;
 		const encoded = Buffer.from(entry);
 		if (encoded.length > maxBytes) {
