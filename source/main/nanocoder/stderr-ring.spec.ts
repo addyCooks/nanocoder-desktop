@@ -22,6 +22,21 @@ const cases: Array<[string, string]> = [
 	['github_pat_abcdefghijklmnopqrstuvwxyz', '[redacted]'],
 	[`aws ${['AKIA', 'ABCDEFGHIJKLMNOP'].join('')}`, 'aws [redacted]'],
 	['AIzaabcdefghijklmnopqrstuvwxyz012345678', '[redacted]'],
+	['Cookie: sessionid=abc123; csrftoken=zzzz', 'Cookie: [redacted]'],
+	['Set-Cookie: session=abc123; HttpOnly', 'Set-Cookie: [redacted]'],
+	[
+		'Ocp-Apim-Subscription-Key: 0123456789abcdef',
+		'Ocp-Apim-Subscription-Key: [redacted]',
+	],
+	[
+		'GET https://api.example.com/v1?key=abc123&x=1',
+		'GET https://api.example.com/v1?key=[redacted]&x=1',
+	],
+	[
+		'-----BEGIN PRIVATE KEY----- MIIEvQIBADAN -----END PRIVATE KEY-----',
+		'[redacted]',
+	],
+	['key -----BEGIN RSA PRIVATE KEY-----', 'key [redacted]'],
 ];
 
 for (const [input, expected] of cases) {
@@ -142,6 +157,34 @@ test('matches the home directory exactly where case matters', t => {
 
 test('ignores a root home directory', t => {
 	t.is(redact('/etc/hosts', '/', 'linux'), '/etc/hosts');
+});
+
+test('leaves words that only resemble a secret name alone', t => {
+	const line = 'hotkey: x, monkey=1, cookies: 3, key: lookup failed';
+	t.is(redact(line), line);
+});
+
+test('blanks every line of a private key between its header and footer', t => {
+	const ring = new StderrRing();
+	ring.write(
+		[
+			'before',
+			'-----BEGIN PRIVATE KEY-----',
+			'MIIEvQIBADANBgkqhkiG9w0BAQEFAASC',
+			'Kg2oYvBw8Wx3Ig==',
+			'-----END PRIVATE KEY-----',
+			'after',
+			'',
+		].join('\n'),
+	);
+	t.deepEqual(ring.lines(), [
+		'before',
+		'[redacted]',
+		'[redacted]',
+		'[redacted]',
+		'[redacted]',
+		'after',
+	]);
 });
 
 test('joins lines split across chunks before redacting', t => {

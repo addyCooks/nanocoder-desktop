@@ -156,7 +156,7 @@ What that means in practice, Suggestion (not discussed):
 |---|---|---|
 | Nanocoder configuration and environment | Provider keys | Never read by the desktop. Nanocoder owns them (`SEC-07`). |
 | ACP stream | Keys and tokens echoed in model output or tool results | Rendered, never persisted (`DATA-04`). |
-| Nanocoder stderr | Stack traces, URLs with credentials, file paths | Redacted ring, in memory only (`ACP-16`). Redaction covers common key formats, `Authorization` and bearer values, credentials in URLs, and the user's home directory. |
+| Nanocoder stderr | Stack traces, URLs with credentials, file paths | Redacted ring, in memory only (`ACP-16`). Redaction covers common key formats, `Authorization`, `Cookie` and bearer values, `key=` parameters and `-key` headers, private key blocks, credentials in URLs, and the user's home directory. |
 | Terminal output | Anything the user runs | Kept in memory for the open terminal only (`TERM-09`). |
 | Browser | Cookies, storage, history | Live in the browser partition; cleared from settings (`BRW-08`). |
 | Crash reports | Memory contents | Electron's crash reporter stays off, or local-only, until a reviewed policy exists. Suggestion (not discussed). |

@@ -2,6 +2,11 @@ const DEFAULT_MAX_BYTES = 256 * 1024;
 const MAX_LINE_LENGTH = 4096;
 const REDACTED = '[redacted]';
 
+// A key's lines are only recognisable by its header and footer, so the pattern
+// takes everything from the header to the footer, or to the end if the footer is absent.
+const PRIVATE_KEY =
+	/-----BEGIN [A-Z ]*PRIVATE KEY-----(?:[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----|[\s\S]*)/g;
+
 const SECRET_PATTERNS: ReadonlyArray<[RegExp, string]> = [
 	[/\b([a-z][a-z\d+.-]*:\/\/)[^\s/@]+@/gi, `$1${REDACTED}@`],
 	[
@@ -13,10 +18,14 @@ const SECRET_PATTERNS: ReadonlyArray<[RegExp, string]> = [
 		`$1${REDACTED}`,
 	],
 	[/\bbearer\s+[\w.~+/=-]+/gi, `Bearer ${REDACTED}`],
+	// A cookie value holds spaces and semicolons, so everything after the name goes.
+	[/\b(cookie["']?\s*[:=]\s*["']?).+/gi, `$1${REDACTED}`],
 	[
-		/\b([\w-]*(?:api[_-]?key|token|secret|password|passwd|credential)[\w-]*(?:\\?["'])?\s*[:=]\s*(?:\\?["'])?)[^\s"',;&]+/gi,
+		/\b([\w-]*(?:api[_-]?key|[_-]key|token|secret|password|passwd|credential)[\w-]*(?:\\?["'])?\s*[:=]\s*(?:\\?["'])?)[^\s"',;&]+/gi,
 		`$1${REDACTED}`,
 	],
+	[/([?&]key=)[^\s"',;&]+/gi, `$1${REDACTED}`],
+	[PRIVATE_KEY, REDACTED],
 	[
 		/\b(?:sk-[\w-]{16,}|gsk_[\w-]{20,}|hf_[\w-]{20,}|gh[opsur]_\w{20,}|github_pat_\w{20,}|glpat-[\w-]{20,}|xox[abposr]-[\w-]{10,}|AKIA[\dA-Z]{16}|AIza[\w-]{35})/g,
 		REDACTED,
@@ -110,6 +119,7 @@ export class StderrRing {
 	private bytes = 0;
 	private partial = '';
 	private discarding = false;
+	private insideKey = false;
 	private wasTruncated = false;
 
 	get truncated(): boolean {
@@ -150,7 +160,16 @@ export class StderrRing {
 	append(line: string): void {
 		if (line.trim() === '') return;
 		if (line.length > MAX_LINE_LENGTH) this.wasTruncated = true;
-		let entry = truncate(redact(line, this.options.homeDir));
+		// The lines between a key's header and footer carry no marker of their own.
+		let text = line;
+		if (this.insideKey) {
+			this.insideKey = !line.includes('-----END ');
+			text = REDACTED;
+		} else {
+			this.insideKey =
+				/-----BEGIN [A-Z ]*PRIVATE KEY-----(?![\s\S]*-----END )/.test(line);
+		}
+		let entry = truncate(redact(text, this.options.homeDir));
 		const maxBytes = this.options.maxBytes ?? DEFAULT_MAX_BYTES;
 		const encoded = Buffer.from(entry);
 		if (encoded.length > maxBytes) {
