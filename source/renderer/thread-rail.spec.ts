@@ -65,7 +65,7 @@ test('plain-prop rail renders scoped groups selected semantics and literal title
 	t.false(html.includes('other project fixture'));
 	t.true(html.includes('data-selected="true"'));
 	t.true(html.includes('aria-current="true"'));
-	t.true(html.includes('thread-status--primary'));
+	t.false(html.includes('thread-status'));
 	t.true(html.includes('aria-label="fixture running · running"'));
 	t.false(html.includes('fixture archived'));
 });

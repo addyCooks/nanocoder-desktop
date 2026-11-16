@@ -116,8 +116,8 @@ test('CHAT-22 a turn waiting for approval in another project is marked in the ra
 	await startTurn();
 	// The thread's own state still arrives while activity events are published beside it.
 	await expect(
-		page.locator('.thread-row[data-selected="true"] .thread-status'),
-	).toHaveText('▲');
+		page.locator('.thread-row[data-selected="true"] .thread-state-label'),
+	).toContainText('approval required');
 	await openFolder(project('beta-project'));
 	const marker = rail().getByRole('button', {
 		name: 'alpha-project · needs approval · open',

@@ -24,6 +24,11 @@ import {createDraftThread} from './qa/new-thread';
 import {openFolderFromPalette} from './qa/open-folder';
 import {turnCancelled, turnEnded} from './qa/turn-state';
 
+const sendKeys =
+	process.platform === 'darwin'
+		? '↵ send · ⇧↵ newline'
+		: 'Enter send · Shift+Enter newline';
+
 const work = realpathSync.native(
 	mkdtempSync(path.join(tmpdir(), 'nd-approvals-')),
 );
@@ -483,13 +488,13 @@ test.describe('approval and overlay focus', () => {
 			page.getByRole('button', {name: 'send', exact: true}),
 		).toBeDisabled();
 		await expect(input()).toHaveAccessibleDescription(
-			'waiting for your decision · draft is not queued ↵ send · ⇧↵ newline',
+			'waiting for your decision · draft is not queued ' + sendKeys,
 		);
 		await page.keyboard.press('3');
 		await expect(cards()).toHaveCount(0);
 		await expect(input()).toBeFocused();
 		await expect(input()).not.toHaveAccessibleDescription(
-			'waiting for your decision · draft is not queued ↵ send · ⇧↵ newline',
+			'waiting for your decision · draft is not queued ' + sendKeys,
 		);
 	});
 

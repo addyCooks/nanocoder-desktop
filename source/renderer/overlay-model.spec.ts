@@ -5,6 +5,7 @@ import {
 	filterActions,
 	focusReturn,
 	importedToast,
+	keyHint,
 	moveSelection,
 	notifyImported,
 	type PaletteAction,
@@ -142,6 +143,12 @@ test('command shortcuts use the Mac symbol on macOS and Ctrl elsewhere (E-19)', 
 	t.is(commandModifier('MacIntel'), '⌘');
 	t.is(commandModifier('Win32'), 'Ctrl+');
 	t.is(commandModifier('Linux x86_64'), 'Ctrl+');
+	t.is(keyHint('↵ send · ⇧↵ newline', 'MacIntel'), '↵ send · ⇧↵ newline');
+	t.is(
+		keyHint('↵ send · ⇧↵ newline', 'Linux x86_64'),
+		'Enter send · Shift+Enter newline',
+	);
+	t.is(keyHint('⏎', 'Win32'), 'Enter');
 });
 
 test('every overlay request has a dialog name for assistive technology (E-02, E-03, E-37)', t => {

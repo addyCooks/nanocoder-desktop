@@ -108,9 +108,9 @@ scrollbar rules are among the mirrored sheets.
   input in screen-reader mode have not been checked with real assistive
   technology. VoiceOver, NVDA and native-focus QA remain manual gaps.
 
-The agent strip is separate, escaped text with no action or routing
-authority. It labels Nanocoder's reported command and approval result as
-agent activity, never as input into the user's terminal (`TERM-12`).
+The terminal panel no longer shows an agent strip. Main still keeps the
+bounded last-command projection (`TERM-12`), and Nanocoder's commands and
+approvals appear in the chat, never as input into the user's terminal.
 
 ## Bounded local details, not upstream policy changes
 

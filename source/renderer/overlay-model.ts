@@ -60,6 +60,15 @@ export function commandModifier(platform: string) {
 	return platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
 }
 
+function currentPlatform() {
+	return typeof navigator === 'undefined' ? '' : (navigator.platform ?? '');
+}
+
+export function keyHint(text: string, platform = currentPlatform()) {
+	if (platform.startsWith('Mac')) return text;
+	return text.replaceAll('⇧', 'Shift+').replaceAll(/[↵⏎]/g, 'Enter');
+}
+
 export function filterActions(actions: PaletteAction[], query: string) {
 	const text = query.trim().toLocaleLowerCase();
 	if (!text) return actions;

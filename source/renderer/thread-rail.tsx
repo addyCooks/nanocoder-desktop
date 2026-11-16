@@ -66,12 +66,6 @@ export function ThreadRail(props: ThreadRailProps): React.ReactElement {
 					disabled={props.pending}
 					onClick={() => props.onOpen(thread.id)}
 				>
-					<span
-						className={`thread-status thread-status--${status.tone}`}
-						aria-hidden="true"
-					>
-						{status.glyph}
-					</span>
 					<span className="thread-copy">
 						<span className="thread-title">{thread.title}</span>
 						{riskLabel && <span className="thread-retention">{riskLabel}</span>}

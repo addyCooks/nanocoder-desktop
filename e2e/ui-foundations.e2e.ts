@@ -21,6 +21,11 @@ import {openFolderFromPalette} from './qa/open-folder';
 import {turnEnded} from './qa/turn-state';
 import {contrast, themedColor, visibleTextContrast} from './qa/ui-contrast';
 
+const sendKeys =
+	process.platform === 'darwin'
+		? '↵ send · ⇧↵ newline'
+		: 'Enter send · Shift+Enter newline';
+
 const work = realpathSync.native(mkdtempSync(path.join(tmpdir(), 'nd-ui-')));
 const cli = path.join(work, 'nanocoder/dist/cli.js');
 const project = path.join(work, 'project');
@@ -262,11 +267,11 @@ test('keyboard focus is visible on buttons and the message input', async () => {
 		}
 		if (control === input) {
 			await expect(input).toHaveAccessibleDescription(
-				'ready for your next message; enter a message to send ↵ send · ⇧↵ newline',
+				'ready for your next message; enter a message to send ' + sendKeys,
 			);
 			await input.fill('synthetic UI check');
 			await expect(input).toHaveAccessibleDescription(
-				'ready for your next message ↵ send · ⇧↵ newline',
+				'ready for your next message ' + sendKeys,
 			);
 			await expect(send).toBeEnabled();
 		}
@@ -325,7 +330,7 @@ test('approval parts have named actions and no new contrast gaps in either theme
 	await expect(
 		page.getByRole('textbox', {name: 'message'}),
 	).toHaveAccessibleDescription(
-		'waiting for your decision · draft is not queued ↵ send · ⇧↵ newline',
+		'waiting for your decision · draft is not queued ' + sendKeys,
 	);
 	await expect(
 		page.getByRole('status').filter({hasText: 'approval'}),
@@ -547,24 +552,14 @@ test('a child exit shows a failed turn without a stale ACP readiness claim in ei
 		).toBeEnabled();
 		await expect(page.locator('.ui-badge--success')).toHaveCount(0);
 		const selected = page.locator('.thread-row[data-selected="true"]');
-		const glyph = selected.locator('.thread-status--error');
-		await expect(glyph).toBeVisible();
-		await expect(glyph).toHaveCSS(
-			'color',
-			theme === 'dark' ? 'rgb(230, 230, 230)' : 'rgb(36, 40, 59)',
-		);
-		const dash = await glyph.evaluate(element =>
-			getComputedStyle(element, '::after').getPropertyValue('background-color'),
-		);
-		expect(dash).toBe(
-			theme === 'dark' ? 'rgb(247, 118, 142)' : 'rgb(161, 40, 76)',
-		);
+		const stateLabel = selected.locator('.thread-state-label');
+		await expect(stateLabel).toContainText('failed');
 		await expect(selected).toHaveCSS(
 			'background-color',
 			theme === 'dark' ? 'rgb(32, 42, 59)' : 'rgb(220, 230, 250)',
 		);
 		await expect(selected).toHaveCSS('border-left-color', 'rgba(0, 0, 0, 0)');
-		const rendered = await glyph.evaluate(element => {
+		const rendered = await stateLabel.evaluate(element => {
 			const style = getComputedStyle(element);
 			const rgb = (value: string) =>
 				value

@@ -240,10 +240,6 @@ test('TERM-01 a native utility-process crash leaves main alive and cleans the se
 test('TERM-12 agent command approval metadata never starts or writes the user PTY', async () => {
 	await openSeededProject(page, path.join(work, 'project'));
 	await page.getByRole('button', {name: 'open terminal', exact: true}).click();
-	const strip = page.getByRole('complementary', {
-		name: 'Nanocoder agent activity',
-	});
-	await expect(strip).toContainText('none reported');
 	const created = await page.evaluate(
 		projectId =>
 			(window as unknown as {desktop: DesktopApi}).desktop.createThread({
@@ -268,8 +264,6 @@ test('TERM-12 agent command approval metadata never starts or writes the user PT
 			return state.ok ? state.value.agentCommand?.approval : undefined;
 		})
 		.toBe('pending');
-	await expect(strip).toContainText('▲ approval pending');
-	await expect(strip.locator('button, input, a')).toHaveCount(0);
 	const snapshot = await page.evaluate(
 		({projectId, threadId}) =>
 			(window as unknown as {desktop: DesktopApi}).desktop.getThreadSnapshot({
@@ -306,11 +300,7 @@ test('TERM-12 agent command approval metadata never starts or writes the user PT
 			agentCommand: {command: 'echo hi', approval: 'allowed'},
 		},
 	});
-	await expect(strip).toContainText('echo hi');
-	await expect(strip).toContainText('✓ allowed');
-	await expect(strip).toContainText(
-		'agent activity only, not input into your terminal.',
-	);
+	await expect(page.locator('.terminal-panel')).not.toContainText('echo hi');
 	// Preserve cross-platform metadata checks; the printf UI fixture is POSIX.
 	if (process.platform === 'win32') return;
 	await page.locator(`[data-thread-id="${threadId}"] .thread-open`).click();

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {FilePreview} from '@/renderer/file-preview';
 import {FileTree} from '@/renderer/file-tree';
+import {keyHint} from '@/renderer/overlay-model';
 import {ReviewPanel} from '@/renderer/review-panel';
 import {Button} from '@/renderer/ui';
 import type {useFiles} from '@/renderer/use-files';
@@ -126,7 +127,9 @@ export function Workbench({
 				{tab === 'files' && (
 					<>
 						<p className="files-hint">
-							↑↓ move · → expand · ← collapse · ↵ open · ⇧↵ attach to chat
+							{keyHint(
+								'↑↓ move · → expand · ← collapse · ↵ open · ⇧↵ attach to chat',
+							)}
 						</p>
 						{files.state.directories['']?.status === 'loading' &&
 							!files.state.directories[''].listing && (

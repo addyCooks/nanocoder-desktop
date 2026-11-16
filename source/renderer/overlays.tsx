@@ -19,6 +19,7 @@ import {
 	dialogLabel,
 	filterActions,
 	focusReturn,
+	keyHint,
 	moveSelection,
 	type OverlayRequest,
 	overlayRules,
@@ -488,7 +489,9 @@ export function OverlayProvider({
 								no commands found. try a different action name.
 							</p>
 						)}
-						<p className="overlay-hint">↑↓ move · ↵ choose · esc close</p>
+						<p className="overlay-hint">
+							{keyHint('↑↓ move · ↵ choose · esc close')}
+						</p>
 					</DialogShell>
 				)}
 				{current === 'shortcuts' && (

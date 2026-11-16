@@ -38,30 +38,6 @@
 	padding: 3px 7px;
 	font-size: var(--typography-caption-font-size);
 }
-.terminal-agent {
-	flex: none;
-	max-height: 74px;
-	overflow: auto;
-	padding: 7px 20px;
-	background: var(--colors-surface-elevated);
-	color: var(--colors-on-surface-muted);
-	font-size: var(--typography-caption-font-size);
-	overflow-wrap: anywhere;
-}
-.terminal-agent code {
-	color: var(--colors-on-surface);
-	font-size: inherit;
-	white-space: pre-wrap;
-}
-.terminal-agent [data-approval="allowed"] {
-	color: var(--colors-success);
-}
-.terminal-agent [data-approval="pending"] {
-	color: var(--colors-warning);
-}
-.terminal-agent [data-approval="rejected"] {
-	color: var(--colors-error);
-}
 .terminal-session {
 	display: flex;
 	flex: 1;
@@ -122,7 +98,6 @@
 	.terminal-session {
 		padding-inline: 16px;
 	}
-	.terminal-agent,
 	.terminal-help {
 		padding-inline: 14px;
 	}

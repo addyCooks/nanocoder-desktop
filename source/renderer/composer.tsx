@@ -3,6 +3,7 @@ import type {AttachmentChip} from '@/renderer/attachments';
 import {composerEnter} from '@/renderer/composer-key';
 import {Dropdown} from '@/renderer/dropdown';
 import {Icon} from '@/renderer/icons';
+import {keyHint} from '@/renderer/overlay-model';
 import {SlashSuggestions} from '@/renderer/stream-commands';
 import type {Transcript} from '@/renderer/transcript';
 import {Button} from '@/renderer/ui';
@@ -278,7 +279,7 @@ export function Composer(props: ComposerProps) {
 					</Button>
 				</div>
 				<p id={helpId} className="sr-only composer-help">
-					<span>↵ send · ⇧↵ newline</span>
+					<span>{keyHint('↵ send · ⇧↵ newline')}</span>
 					{props.commands.length > 0 && <span>/ advertised commands</span>}
 				</p>
 				{props.error && <p role="alert">{props.error}</p>}

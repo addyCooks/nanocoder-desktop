@@ -59,21 +59,13 @@ test('terminal panel offers explicit lifecycle controls and documented screen-re
 	t.false(render(null).includes('○ loading'));
 });
 
-test('agent strip is inert escaped display, with truthful unknown approval and separate ownership', t => {
+test('the terminal panel shows no agent command strip', t => {
 	const html = render({
 		...snapshot,
-		agentCommand: {
-			threadId: 'thread',
-			command: '<img src=x onerror=alert(1)>',
-			approval: 'unknown',
-		},
+		agentCommand: {threadId: 'thread', command: 'echo hi', approval: 'allowed'},
 	});
-	t.true(html.includes('Nanocoder’s last command'));
-	t.true(html.includes('agent activity only, not input into your terminal.'));
-	t.true(html.includes('&lt;img'));
-	t.false(html.includes('<img'));
-	t.true(html.includes('? approval unknown'));
-	t.false(html.includes('allowed'));
+	t.false(html.includes('echo hi'));
+	t.false(html.includes('Nanocoder agent activity'));
 });
 
 test('terminal escape chord is exact and does not consume normal tab or shell escape', t => {

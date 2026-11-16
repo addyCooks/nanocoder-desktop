@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {keyHint} from '@/renderer/overlay-model';
 import {Button, Card} from '@/renderer/ui';
 import type {
 	IpcResult,
@@ -168,7 +169,7 @@ function OptionButtons({
 									? 'allow'
 									: 'reject'
 						}
-						keyHint={shortcut ?? '⏎'}
+						keyHint={shortcut ?? keyHint('⏎')}
 						aria-keyshortcuts={shortcut}
 						disabled={answering}
 						onClick={() => choose(request, option.id)}

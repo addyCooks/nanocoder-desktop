@@ -7,14 +7,6 @@ import {Button} from '@/renderer/ui';
 import {latestLocalUrl} from '@/shared/local-url';
 import type {TerminalSnapshot} from '@/shared/terminal';
 
-const approvalLabels = {
-	unknown: '? approval unknown',
-	pending: '▲ approval pending',
-	allowed: '✓ allowed',
-	rejected: '✕ rejected',
-	cancelled: '○ cancelled',
-};
-
 export function TerminalPanel({
 	snapshot,
 	pending,
@@ -46,7 +38,6 @@ export function TerminalPanel({
 	const [viewFailed, setViewFailed] = React.useState(false);
 	const running = snapshot?.status === 'running';
 	const busy = pending || loading || snapshot?.status === 'starting';
-	const command = snapshot?.agentCommand;
 	const serverUrl = React.useMemo(
 		() => latestLocalUrl(snapshot?.output ?? ''),
 		[snapshot?.output],
@@ -142,19 +133,6 @@ export function TerminalPanel({
 					</Button>
 				</div>
 			</header>
-			<aside className="terminal-agent" aria-label="Nanocoder agent activity">
-				{command ? (
-					<p>
-						Nanocoder’s last command · <code>{command.command}</code> ·{' '}
-						<span data-approval={command.approval}>
-							{approvalLabels[command.approval]}
-						</span>
-					</p>
-				) : (
-					<p>Nanocoder’s last command · none reported</p>
-				)}
-				<p>agent activity only, not input into your terminal.</p>
-			</aside>
 			<div className="terminal-session">
 				<p className="terminal-identity">
 					your terminal · {projectName} ·{' '}

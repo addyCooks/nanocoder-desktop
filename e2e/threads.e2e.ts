@@ -19,7 +19,6 @@ import type {IpcResult, ProjectEvent, ThreadSnapshot} from '@/shared/ipc';
 import {electron} from './qa/electron';
 import {qaEnvironment} from './qa/environment';
 import {turnCancelled, turnEnded} from './qa/turn-state';
-import {contrast} from './qa/ui-contrast';
 
 let work: string;
 let app: ElectronApplication;
@@ -116,13 +115,11 @@ test('long thread titles stay inside the rail with visible glyphs, selection rul
 			const bounds = await selected.evaluate(element => {
 				const rail = element.closest('.shell-project-rail');
 				const section = element.closest('.thread-rail');
-				const glyph = element.querySelector('.thread-status');
 				const title = element.querySelector('.thread-title');
-				if (!rail || !section || !glyph || !title)
+				if (!rail || !section || !title)
 					throw new Error('Expected the complete thread rail');
 				const outer = rail.getBoundingClientRect();
 				const row = element.getBoundingClientRect();
-				const marker = glyph.getBoundingClientRect();
 				return {
 					track: Number.parseFloat(
 						getComputedStyle(section).gridTemplateColumns,
@@ -132,16 +129,12 @@ test('long thread titles stay inside the rail with visible glyphs, selection rul
 					railRight: outer.right,
 					rowLeft: row.left,
 					rowRight: row.right,
-					glyphLeft: marker.left,
-					glyphRight: marker.right,
 					titleWidth: title.clientWidth,
 					titleContent: title.scrollWidth,
 					scrollLeft: rail.scrollLeft,
 				};
 			});
 			expect.soft(bounds.track).toBeLessThanOrEqual(bounds.available);
-			expect.soft(bounds.glyphLeft).toBeGreaterThanOrEqual(bounds.railLeft);
-			expect(bounds.glyphRight).toBeLessThanOrEqual(bounds.railRight);
 			expect(bounds.rowLeft).toBeGreaterThanOrEqual(bounds.railLeft);
 			expect(bounds.rowRight).toBeLessThanOrEqual(bounds.railRight);
 			expect(bounds.scrollLeft).toBe(0);
@@ -159,20 +152,15 @@ test('long thread titles stay inside the rail with visible glyphs, selection rul
 	}
 });
 
-const stateInk = {
-	muted: {dark: 'rgb(168, 168, 168)', light: 'rgb(79, 86, 120)'},
-	primary: {dark: 'rgb(122, 162, 247)', light: 'rgb(0, 0, 238)'},
-	warning: {dark: 'rgb(224, 175, 104)', light: 'rgb(118, 81, 11)'},
-} as const;
-for (const [state, glyph, tone] of [
-	['new', '◌', 'muted'],
-	['ready', '○', 'muted'],
-	['running', '●', 'primary'],
-	['waiting', '▲', 'warning'],
-	['interrupted', '◐', 'warning'],
-	['view-only', '◍', 'muted'],
+for (const [state, label] of [
+	['new', 'new'],
+	['ready', 'ready'],
+	['running', 'running'],
+	['waiting', 'approval required'],
+	['interrupted', 'interrupted'],
+	['view-only', 'view-only'],
 ] as const) {
-	test(`selected ${state} glyph meets rendered AA in both themes without changing its row or selection rule (U.3)`, async () => {
+	test(`selected ${state} row names its state with no status dot and keeps its selection rule in both themes (U.3)`, async () => {
 		await page.emulateMedia({reducedMotion: 'reduce'});
 		const root = path.join(work, 'project');
 		if (state === 'running' || state === 'interrupted')
@@ -220,50 +208,17 @@ for (const [state, glyph, tone] of [
 				page.getByRole('region', {name: 'view-only thread'}),
 			).toBeVisible();
 		}
-		const marker = selected.locator('.thread-status');
-		await expect(marker).toHaveText(glyph);
+		await expect(selected.locator('.thread-status')).toHaveCount(0);
+		await expect(selected.locator('.thread-state-label')).toContainText(label);
 		for (const theme of ['dark', 'light']) {
 			await page.evaluate(theme => {
 				document.documentElement.dataset.theme = theme;
 			}, theme);
-			const rendered = await marker.evaluate(element => {
-				const style = getComputedStyle(element);
-				const owner = element.closest('.thread-row');
-				if (!owner) throw new Error('Expected the selected thread row');
-				const row = getComputedStyle(owner);
-				const rgb = (value: string) =>
-					value
-						.match(/[\d.]+/g)
-						?.slice(0, 3)
-						.map(Number) as [number, number, number];
-				return {
-					foreground: rgb(style.color),
-					background: rgb(
-						style.backgroundColor === 'rgba(0, 0, 0, 0)'
-							? row.backgroundColor
-							: style.backgroundColor,
-					),
-				};
-			});
-			expect(
-				contrast(rendered.foreground, rendered.background),
-			).toBeGreaterThanOrEqual(4.5);
 			await expect(selected).toHaveCSS(
 				'background-color',
 				theme === 'dark' ? 'rgb(32, 42, 59)' : 'rgb(220, 230, 250)',
 			);
 			await expect(selected).toHaveCSS('border-left-color', 'rgba(0, 0, 0, 0)');
-			await expect(marker).toHaveCSS(
-				'color',
-				theme === 'dark' ? 'rgb(230, 230, 230)' : 'rgb(36, 40, 59)',
-			);
-			const dash = await marker.evaluate(element =>
-				getComputedStyle(element, '::after').getPropertyValue(
-					'background-color',
-				),
-			);
-			const ink = stateInk[tone];
-			expect(dash).toBe(theme === 'dark' ? ink.dark : ink.light);
 		}
 	});
 }

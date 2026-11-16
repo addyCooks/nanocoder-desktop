@@ -6,6 +6,7 @@ import {
 	parseDiff,
 	selectLines,
 } from '@/renderer/diff-parse';
+import {keyHint} from '@/renderer/overlay-model';
 import {
 	defaultSide,
 	describeEntry,
@@ -100,7 +101,9 @@ function DiffView({
 				</Button>
 			</header>
 			<p className="files-hint">
-				↑↓ move · ⇧↑↓ extend · click and shift-click select · esc clears
+				{keyHint(
+					'↑↓ move · ⇧↑↓ extend · click and shift-click select · esc clears',
+				)}
 			</p>
 			<div
 				className="diff-lines"

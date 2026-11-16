@@ -2,6 +2,7 @@ import test from 'ava';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {Composer, type ComposerProps} from '@/renderer/composer';
+import {keyHint} from '@/renderer/overlay-model';
 
 const props: ComposerProps = {
 	draft: 'retained fixture draft',
@@ -160,7 +161,7 @@ test('composer shows one draft hint, help row and control note without a prompt 
 	const ready = render({draft: '', modePending: false});
 	t.true(ready.includes('ready for your next message'));
 	t.true(ready.includes('enter a message to send'));
-	t.true(ready.includes('↵ send · ⇧↵ newline'));
+	t.true(ready.includes(keyHint('↵ send · ⇧↵ newline')));
 	t.false(ready.includes('›'));
 	t.regex(
 		ready,
@@ -200,7 +201,7 @@ test('the draft textarea describes its state and keyboard hint together', t => {
 	);
 	t.true(html.includes(`aria-describedby="${descriptionId}"`));
 	t.true(html.includes(`<p id="${helpId}" class="sr-only composer-help">`));
-	t.true(html.includes('↵ send · ⇧↵ newline'));
+	t.true(html.includes(keyHint('↵ send · ⇧↵ newline')));
 	t.true(html.includes('<p class="gate-hint">ready for your next message</p>'));
 	const busy = render({
 		running: true,
