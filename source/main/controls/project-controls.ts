@@ -139,7 +139,7 @@ export function createProjectControls(options: ProjectControlOptions) {
 			: configOptions.length
 				? null
 				: active
-					? 'Nanocoder has not supplied supported model options'
+					? 'this Nanocoder offered no model options to choose from'
 					: perSession
 						? missingOffers
 						: (state.reason ?? missingOffers);

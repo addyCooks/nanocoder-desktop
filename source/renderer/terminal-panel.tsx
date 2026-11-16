@@ -163,6 +163,12 @@ export function TerminalPanel({
 							'The terminal view could not be loaded. Stop the terminal before retrying.'}
 					</p>
 				)}
+				{status === 'stopped' && !snapshot?.output && !disabledReason && (
+					<p className="terminal-hint">
+						no shell is running. choose start terminal to open one in{' '}
+						{projectName}.
+					</p>
+				)}
 				{snapshot?.truncated && (
 					<p className="terminal-hint">
 						older output discarded from the bounded buffer

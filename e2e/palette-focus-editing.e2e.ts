@@ -103,7 +103,7 @@ async function closeOverlay(method: (typeof methods)[number]) {
 		await expect(close).toBeFocused();
 		await close.press(method.endsWith('Escape') ? 'Escape' : 'Enter');
 	} else if (method.endsWith('command')) {
-		await search.pressSequentially('switch to light theme');
+		await search.pressSequentially('theme');
 		await search.press('Enter');
 	} else {
 		await search.press('Escape');

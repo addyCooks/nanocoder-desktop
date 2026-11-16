@@ -57,12 +57,10 @@ test('palette shortcut filters, moves selection, runs actions and returns focus'
 	const input = palette.getByRole('combobox');
 	await expect(input).toBeFocused();
 	await input.fill('theme');
-	await expect(palette.getByRole('option')).toHaveCount(2);
-	await page.keyboard.press('ArrowDown');
-	await expect(palette.getByRole('option').nth(1)).toHaveAttribute(
-		'aria-selected',
-		'true',
-	);
+	await expect(palette.getByRole('option')).toHaveCount(1);
+	await expect(
+		palette.getByRole('option', {name: /switch to light/}),
+	).toBeVisible();
 	await input.fill('switch to light');
 	await page.keyboard.press('Enter');
 	await expect(palette).toBeHidden();
@@ -300,6 +298,9 @@ test('settled toast contrast passes in both themes and active hosts without focu
 	const region = page.getByRole('status', {name: 'notification'});
 	const toast = page.locator('.overlay-toast');
 	await expect(toast).toHaveCount(0);
+	await page.evaluate(() => {
+		document.documentElement.dataset.theme = 'dark';
+	});
 	for (const theme of ['light', 'dark']) {
 		await trigger.click();
 		await page
@@ -622,7 +623,7 @@ test('pointer and keyboard keep exactly one palette result active without taking
 		exact: true,
 	});
 	const input = palette.getByRole('combobox');
-	await input.fill('theme');
+	await input.fill('thread');
 	const options = palette.getByRole('option');
 	await options.nth(1).hover();
 	await expect(options.nth(1)).toHaveAttribute('aria-selected', 'true');
@@ -631,7 +632,7 @@ test('pointer and keyboard keep exactly one palette result active without taking
 	).toHaveCount(1);
 	await expect(input).toBeFocused();
 	await page.keyboard.press('ArrowDown');
-	await expect(options.nth(0)).toHaveAttribute('aria-selected', 'true');
+	await expect(options.nth(2)).toHaveAttribute('aria-selected', 'true');
 	await expect(input).toBeFocused();
 	await page.keyboard.press('Escape');
 });

@@ -129,6 +129,7 @@ export function OverlayProvider({
 	const [selected, setSelected] = useState(0);
 	const [toast, setToast] = useState<Toast | null>(null);
 	const [themeError, setThemeError] = useState('');
+	const [activeTheme, setActiveTheme] = useState<'dark' | 'light'>('dark');
 	const dialog = useRef<HTMLDialogElement>(null);
 	const latestHooks = useRef({canClose, onClosed, onOpenChange});
 	const returnFocus = useRef<(() => void) | null>(null);
@@ -179,17 +180,26 @@ export function OverlayProvider({
 		void window.desktop.getSettings({}).then(result => {
 			if (!live || themeChanged.current || !result.ok) return;
 			const theme = result.value.theme;
-			document.documentElement.dataset.theme =
+			const resolved =
 				theme === 'system'
 					? window.matchMedia('(prefers-color-scheme: light)').matches
 						? 'light'
 						: 'dark'
 					: theme;
+			document.documentElement.dataset.theme = resolved;
+			setActiveTheme(resolved);
 		});
 		return () => {
 			live = false;
 		};
 	}, []);
+
+	useEffect(() => {
+		if (current === 'palette')
+			setActiveTheme(
+				document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
+			);
+	}, [current]);
 
 	const notify = useCallback((message: string) => {
 		notifications.current?.push(message);
@@ -310,19 +320,20 @@ export function OverlayProvider({
 			return;
 		}
 		document.documentElement.dataset.theme = theme;
+		setActiveTheme(theme);
 		notifications.current?.push(`switched to ${theme} theme`);
 	};
 	const commands: PaletteAction[] = [
 		...actions,
-		...(['dark', 'light'] as const).map(theme => ({
-			id: `theme-${theme}`,
-			label: `switch to ${theme} theme`,
+		{
+			id: `theme-${activeTheme === 'dark' ? 'light' : 'dark'}`,
+			label: `switch to ${activeTheme === 'dark' ? 'light' : 'dark'} theme`,
 			glyph: '◐',
 			keywords: 'appearance colour',
 			run: () => {
-				void changeTheme(theme);
+				void changeTheme(activeTheme === 'dark' ? 'light' : 'dark');
 			},
-		})),
+		},
 		{
 			id: 'shortcuts',
 			label: 'keyboard shortcuts',

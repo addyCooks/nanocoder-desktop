@@ -245,7 +245,10 @@ export function BrowserPanel({
 					)}
 					{busy && ' · loading…'}
 				</span>
-				<label className="browser-public">
+				<label
+					className="browser-public"
+					title="lets this browser open public websites. localhost always works."
+				>
 					<input
 						type="checkbox"
 						checked={publicSites}
@@ -253,7 +256,10 @@ export function BrowserPanel({
 					/>{' '}
 					allow public sites
 				</label>
-				<label className="browser-public">
+				<label
+					className="browser-public"
+					title="turns on the browser tool built into Nanocoder. it is separate from this panel and has its own approvals."
+				>
 					<input
 						type="checkbox"
 						checked={nanocoderBrowser}

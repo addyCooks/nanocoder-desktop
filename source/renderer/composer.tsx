@@ -241,7 +241,7 @@ export function Composer(props: ComposerProps) {
 							aria-label={`model and provider for ${modelTarget}`}
 							aria-describedby={noteId}
 						>
-							available after the first message
+							model · after first message
 						</Button>
 					)}
 					<label className="composer-pill composer-mode">

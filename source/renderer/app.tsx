@@ -808,7 +808,7 @@ export function App() {
 											)
 								}
 							>
-								files
+								▤ files
 							</Button>
 						)}
 						{projectId && (

@@ -271,7 +271,7 @@ test('keyboard project, palette and approval journey exposes named roles and sta
 		const search = palette.getByRole('combobox', {name: 'find a command'});
 		await expect(search).toBeFocused();
 		await search.pressSequentially('theme');
-		await expect(palette.getByRole('option')).toHaveCount(2);
+		await expect(palette.getByRole('option')).toHaveCount(1);
 		const nodes = await accessibleControls(page);
 		const combobox = nodes.find(
 			node =>
