@@ -1,5 +1,24 @@
 import * as React from 'react';
+import {Icon} from '@/renderer/icons';
+import {ResizeHandle, usePanelSizes} from '@/renderer/resize-handle';
 import {Button} from '@/renderer/ui';
+
+const defaults = {rail: 260, bottom: 360};
+
+const readViewport = () => ({
+	width: globalThis.innerWidth ?? 1280,
+	height: globalThis.innerHeight ?? 800,
+});
+
+function useViewport() {
+	const [size, setSize] = React.useState(readViewport);
+	React.useEffect(() => {
+		const update = () => setSize(readViewport());
+		globalThis.addEventListener('resize', update);
+		return () => globalThis.removeEventListener('resize', update);
+	}, []);
+	return size;
+}
 
 export function AppShell({
 	title,
@@ -43,9 +62,43 @@ export function AppShell({
 	children: React.ReactNode;
 }) {
 	const inThread = threadTitle !== undefined;
+	const [sizes, setSize] = usePanelSizes();
+	const viewport = useViewport();
+	const rail = sizes.rail ?? defaults.rail;
+	const railMax = Math.min(420, viewport.width - 480);
+	const workbenchDefault = Math.min(
+		720,
+		Math.round((viewport.width - rail) * 0.42),
+	);
+	const workbenchSize = sizes.workbench ?? workbenchDefault;
+	const workbenchMax = viewport.width - rail - 420;
+	const bottom = sizes.bottom ?? defaults.bottom;
+	const bottomMax = Math.round(viewport.height * 0.75);
+	const style = {
+		...(sizes.rail && {
+			'--shell-rail-width': `${Math.min(rail, Math.max(180, railMax))}px`,
+		}),
+		...(sizes.workbench && {
+			'--shell-workbench-width': `${Math.min(workbenchSize, Math.max(280, workbenchMax))}px`,
+		}),
+		...(sizes.bottom && {
+			'--shell-bottom-height': `${Math.min(bottom, bottomMax)}px`,
+		}),
+	} as React.CSSProperties;
 	return (
-		<div className="app-shell">
+		<div className="app-shell" style={style}>
 			<aside className="shell-project-rail" aria-label="project rail">
+				<ResizeHandle
+					label="resize sidebar"
+					axis="x"
+					direction={1}
+					className="shell-rail-resize"
+					size={rail}
+					min={180}
+					max={railMax}
+					onResize={size => setSize('rail', size)}
+					onReset={() => setSize('rail', undefined)}
+				/>
 				<h1 className="shell-brand">
 					{logoSrc && <img className="official-logo" src={logoSrc} alt="" />}
 					{title}
@@ -59,25 +112,23 @@ export function AppShell({
 			<div className="shell-main-area">
 				<header className="shell-title-bar">
 					<div className="shell-identity">
+						<h2>{inThread ? threadTitle : 'your projects'}</h2>
 						<p className="shell-breadcrumb">
 							{inThread
-								? `${projectName ?? 'selected project'} / conversation`
+								? (projectName ?? 'selected project')
 								: 'local workspace'}
 						</p>
-						<div className="shell-title-row">
-							<h2>{inThread ? threadTitle : 'your projects'}</h2>
-							{inThread && onOpenThreadMenu && (
-								<button
-									type="button"
-									className="shell-menu-button"
-									aria-label="thread actions"
-									aria-haspopup="dialog"
-									onClick={onOpenThreadMenu}
-								>
-									<span aria-hidden="true">•••</span>
-								</button>
-							)}
-						</div>
+						{inThread && onOpenThreadMenu && (
+							<button
+								type="button"
+								className="shell-menu-button"
+								aria-label="thread actions"
+								aria-haspopup="dialog"
+								onClick={onOpenThreadMenu}
+							>
+								more
+							</button>
+						)}
 					</div>
 					<div className="shell-header-actions">
 						{statusBadges}
@@ -124,11 +175,27 @@ export function AppShell({
 							aria-label={workbench.title}
 							data-shell-slot="workbench"
 						>
+							<ResizeHandle
+								label="resize side panel"
+								axis="x"
+								direction={-1}
+								className="shell-workbench-resize"
+								size={workbenchSize}
+								min={280}
+								max={workbenchMax}
+								onResize={size => setSize('workbench', size)}
+								onReset={() => setSize('workbench', undefined)}
+							/>
 							<header className="shell-workbench-header">
 								<h2>{workbench.title}</h2>
-								<Button onClick={workbench.onClose}>
-									<span className="workbench-close-wide">close panel</span>
-									<span className="workbench-close-narrow">← back to chat</span>
+								<Button
+									className="close-button"
+									aria-label={
+										viewport.width <= 840 ? 'back to chat' : 'close panel'
+									}
+									onClick={workbench.onClose}
+								>
+									<Icon name="close" size={16} />
 								</Button>
 							</header>
 							{workbench.children}
@@ -141,6 +208,17 @@ export function AppShell({
 						aria-label="project tools"
 						data-shell-slot="bottom-panel"
 					>
+						<ResizeHandle
+							label="resize bottom panel"
+							axis="y"
+							direction={-1}
+							className="shell-bottom-resize"
+							size={bottom}
+							min={160}
+							max={bottomMax}
+							onResize={size => setSize('bottom', size)}
+							onReset={() => setSize('bottom', undefined)}
+						/>
 						{bottomPanel}
 					</section>
 				)}

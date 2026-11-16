@@ -60,7 +60,7 @@ test('busy composer keeps the editable draft and cancel while blocking controls 
 	t.regex(html, /<button(?=[^>]*aria-label="send")(?=[^>]*disabled="")[^>]*>/);
 	t.regex(
 		html,
-		/<select(?=[^>]*aria-label="mode for this thread")(?=[^>]*disabled="")[^>]*>/,
+		/<button(?=[^>]*role="combobox")(?=[^>]*aria-label="mode for this thread")(?=[^>]*disabled="")[^>]*>/,
 	);
 	t.true(html.includes('another thread is running'));
 	t.true(html.includes('stop the running turn first'));
@@ -111,7 +111,7 @@ test('project selects show only confirmed values and escape labels (CHAT-10 ACP-
 	t.true(html.includes('model for every thread in project &lt;fixture&gt;'));
 	t.true(
 		html.includes(
-			'<option value="confirmed" selected="">&lt;confirmed&gt;</option>',
+			'aria-selected="true" data-value="confirmed" data-active="true">&lt;confirmed&gt;</li>',
 		),
 	);
 	t.false(html.includes('<confirmed>'));
@@ -162,7 +162,10 @@ test('composer shows one draft hint, help row and control note without a prompt 
 	t.true(ready.includes('enter a message to send'));
 	t.true(ready.includes('↵ send · ⇧↵ newline'));
 	t.false(ready.includes('›'));
-	t.true(ready.includes('↑ </span>send'));
+	t.regex(
+		ready,
+		/composer-send"><svg[^>]*lucide-arrow-up[^>]*aria-hidden="true"/,
+	);
 	t.true(
 		ready.includes(
 			'model applies to every thread in fixture. tools in Nanocoder&#x27;s alwaysAllow list still run without asking.',
@@ -176,7 +179,7 @@ test('composer shows one draft hint, help row and control note without a prompt 
 	});
 	t.true(running.includes('turn in progress · draft is not queued'));
 	t.true(running.includes('write a draft for later…'));
-	t.true(running.includes('✕ </span>cancel turn'));
+	t.true(running.includes('composer-cancel">cancel turn</button>'));
 	t.true(
 		running.includes(
 			'model + mode locked until the project turn stops. model applies to every thread in fixture.',
@@ -196,7 +199,7 @@ test('the draft textarea describes its state and keyboard hint together', t => {
 		),
 	);
 	t.true(html.includes(`aria-describedby="${descriptionId}"`));
-	t.true(html.includes(`<p id="${helpId}" class="gate-hint composer-help">`));
+	t.true(html.includes(`<p id="${helpId}" class="sr-only composer-help">`));
 	t.true(html.includes('↵ send · ⇧↵ newline'));
 	t.true(html.includes('<p class="gate-hint">ready for your next message</p>'));
 	const busy = render({
@@ -214,7 +217,7 @@ test('the draft textarea describes its state and keyboard hint together', t => {
 test('the options disclosure is a button that controls its body (C-05)', t => {
 	const html = render({});
 	const toggle =
-		/<button type="button" class="composer-options-toggle" aria-expanded="false" aria-controls="([^"]+)"><span aria-hidden="true">▸ <\/span>mode and project default details<\/button>/.exec(
+		/<button type="button" class="composer-options-toggle" aria-label="mode and project default details" title="mode and project default" aria-expanded="false" aria-controls="([^"]+)"><svg/.exec(
 			html,
 		);
 	const id = toggle?.[1] ?? '';

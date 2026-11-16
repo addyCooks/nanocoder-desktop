@@ -1,4 +1,6 @@
 import * as React from 'react';
+import {Dropdown} from '@/renderer/dropdown';
+import {Icon} from '@/renderer/icons';
 import {Button} from '@/renderer/ui';
 import type {
 	BrowserBounds,
@@ -108,13 +110,26 @@ function useViewportBounds(
 			if (frame === 0) frame = requestAnimationFrame(report);
 		};
 		const observer = new ResizeObserver(schedule);
+		const parent = element.parentElement;
+		const watchSiblings = () => {
+			if (!parent) return;
+			observer.observe(parent);
+			for (const child of parent.children) observer.observe(child);
+		};
 		observer.observe(element);
 		observer.observe(document.body);
+		watchSiblings();
+		const mutations = new MutationObserver(() => {
+			watchSiblings();
+			schedule();
+		});
+		if (parent) mutations.observe(parent, {childList: true});
 		window.addEventListener('resize', schedule);
 		schedule();
 		return () => {
 			if (frame !== 0) cancelAnimationFrame(frame);
 			observer.disconnect();
+			mutations.disconnect();
 			window.removeEventListener('resize', schedule);
 			onBounds(null);
 		};
@@ -192,7 +207,7 @@ export function BrowserPanel({
 					disabled={!snapshot?.canGoBack}
 					onClick={() => onNavigate('back')}
 				>
-					←
+					<Icon name="back" />
 				</Button>
 				<Button
 					aria-label="forward"
@@ -200,7 +215,7 @@ export function BrowserPanel({
 					disabled={!snapshot?.canGoForward}
 					onClick={() => onNavigate('forward')}
 				>
-					→
+					<Icon name="forward" />
 				</Button>
 				<Button
 					aria-label={busy ? 'stop loading' : 'reload'}
@@ -208,7 +223,7 @@ export function BrowserPanel({
 					disabled={!open}
 					onClick={() => onNavigate(busy ? 'stop' : 'reload')}
 				>
-					{busy ? '✕' : '↻'}
+					<Icon name={busy ? 'close' : 'reload'} />
 				</Button>
 				<input
 					className="browser-address"
@@ -277,27 +292,25 @@ export function BrowserPanel({
 				</p>
 			)}
 			<div className="browser-profile">
-				<label>
-					profile{' '}
-					<select
-						aria-label="browser profile"
-						value={current}
-						disabled={!profiles || pending}
-						onChange={event => {
-							setConfirming(null);
-							onProfile(event.target.value);
-						}}
-					>
-						<option value="project">this project's own</option>
-						<option value="default">shared default</option>
-						{profiles?.profiles.map(entry => (
-							<option key={entry.id} value={entry.id}>
-								{entry.name}
-							</option>
-						))}
-						<option value="incognito">incognito, not saved</option>
-					</select>
-				</label>
+				<span className="browser-profile-label">profile</span>
+				<Dropdown
+					aria-label="browser profile"
+					value={current}
+					disabled={!profiles || pending}
+					options={[
+						{value: 'project', label: "this project's own"},
+						{value: 'default', label: 'shared default'},
+						...(profiles?.profiles.map(entry => ({
+							value: entry.id,
+							label: entry.name,
+						})) ?? []),
+						{value: 'incognito', label: 'incognito, not saved'},
+					]}
+					onChange={value => {
+						setConfirming(null);
+						onProfile(value);
+					}}
+				/>
 				<Button
 					title={
 						attachReason ??

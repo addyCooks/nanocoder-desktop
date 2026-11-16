@@ -56,7 +56,11 @@ pre,
 
 :focus-visible {
 	outline: 2px solid var(--colors-primary);
-	outline-offset: 3px;
+	outline-offset: 1px;
+}
+
+:focus:not(:focus-visible) {
+	outline: none;
 }
 
 .ui-button {
@@ -86,12 +90,12 @@ pre,
 }
 
 .ui-button:hover:not(:disabled) {
-	border-color: var(--colors-on-surface);
+	border-color: var(--colors-on-surface-muted);
+	background: var(--colors-surface-elevated);
 }
 
 .ui-button:disabled {
 	cursor: not-allowed;
-	border-style: dashed;
 	color: var(--colors-on-surface-muted);
 }
 

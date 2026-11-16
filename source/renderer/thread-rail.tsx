@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {Icon} from '@/renderer/icons';
 import {retentionLabel} from '@/renderer/retention-notice';
 import {
 	compactAge,
@@ -97,7 +98,8 @@ export function ThreadRail(props: ThreadRailProps): React.ReactElement {
 					if (props.projectId) props.onNew(props.projectId);
 				}}
 			>
-				<span aria-hidden="true">＋ </span>new thread
+				<Icon name="plus" />
+				new thread
 			</Button>
 			{newReason && <p className="thread-rail-note">{newReason}</p>}
 			{props.projectId && groups.every(group => group.threads.length === 0) && (
@@ -123,7 +125,7 @@ export function ThreadRail(props: ThreadRailProps): React.ReactElement {
 					aria-haspopup="dialog"
 					onClick={event => props.onOpenArchives(event.currentTarget)}
 				>
-					<span aria-hidden="true">░</span>
+					<Icon name="archive" />
 					<span className="sidebar-link-label">archived</span>
 					<span className="sidebar-link-count">{archived.length}</span>
 				</button>
@@ -134,7 +136,7 @@ export function ThreadRail(props: ThreadRailProps): React.ReactElement {
 					className="sidebar-link"
 					onClick={props.onOpenImport}
 				>
-					<span aria-hidden="true">↳</span>
+					<Icon name="import" />
 					<span className="sidebar-link-label">import sessions</span>
 					<span className="sidebar-link-count">{props.importCount}</span>
 				</button>

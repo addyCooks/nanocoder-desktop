@@ -820,7 +820,7 @@ export function App() {
 									browserTabOpen ? hidePanel() : showPanel('browser')
 								}
 							>
-								◫ browser
+								browser
 							</Button>
 						)}
 						{projectId && (
@@ -830,7 +830,7 @@ export function App() {
 								aria-expanded={terminalOpen}
 								onClick={() => setTerminalOpen(value => !value)}
 							>
-								$_ terminal
+								terminal
 							</Button>
 						)}
 						<PaletteButton />
@@ -1138,17 +1138,12 @@ export function App() {
 				)}
 				{outcome?.status === 'untrusted' && (
 					<Card variant="failure" role="alert">
-						<span>
-							<span aria-hidden="true">✕ </span>not opened. {outcome.message}
-						</span>
+						<span>not opened. {outcome.message}</span>
 					</Card>
 				)}
 				{opened && !opened.ok && (
 					<Card variant="failure" role="alert">
-						<span>
-							<span aria-hidden="true">✕ </span>
-							{opened.error.message}
-						</span>
+						<span>{opened.error.message}</span>
 					</Card>
 				)}
 			</AppShell>

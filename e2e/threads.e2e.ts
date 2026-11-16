@@ -150,10 +150,10 @@ test('long thread titles stay inside the rail with visible glyphs, selection rul
 				'text-overflow',
 				'ellipsis',
 			);
-			await expect(selected).toHaveCSS('border-left-width', '2px');
+			await expect(selected).toHaveCSS('border-left-color', 'rgba(0, 0, 0, 0)');
 			await expect(selected).toHaveCSS(
-				'border-left-color',
-				theme === 'dark' ? 'rgb(122, 162, 247)' : 'rgb(0, 0, 238)',
+				'background-color',
+				theme === 'dark' ? 'rgb(32, 42, 59)' : 'rgb(220, 230, 250)',
 			);
 		}
 	}
@@ -252,11 +252,7 @@ for (const [state, glyph, tone] of [
 				'background-color',
 				theme === 'dark' ? 'rgb(32, 42, 59)' : 'rgb(220, 230, 250)',
 			);
-			await expect(selected).toHaveCSS('border-left-width', '2px');
-			await expect(selected).toHaveCSS(
-				'border-left-color',
-				theme === 'dark' ? 'rgb(122, 162, 247)' : 'rgb(0, 0, 238)',
-			);
+			await expect(selected).toHaveCSS('border-left-color', 'rgba(0, 0, 0, 0)');
 			await expect(marker).toHaveCSS(
 				'color',
 				theme === 'dark' ? 'rgb(230, 230, 230)' : 'rgb(36, 40, 59)',

@@ -122,6 +122,9 @@ test.beforeEach(async () => {
 		},
 	});
 	page = await app.firstWindow();
+	await app.evaluate(({BrowserWindow}) => {
+		BrowserWindow.getAllWindows()[0].setContentSize(1240, 900);
+	});
 	await page.setViewportSize({width: 1240, height: 900});
 	await app.evaluate(({dialog}, folder) => {
 		dialog.showOpenDialog = (async () => ({
@@ -302,11 +305,14 @@ test('BRW-11 the agent opens the local dev server, takes a snapshot, clicks a bu
 	expect(short.text).toContain('[truncated at 500 characters]');
 	expect(short.text.length).toBeLessThan(1500);
 
+	const startedAt = Number(await inPage('Math.round(scrollY)'));
 	const scrolled = await agent('desktop_browser_scroll', {
 		direction: 'down',
 		amount: 800,
 	});
-	expect(scrolled.text).toMatch(/^Scrolled\. Position 0,800 of /);
+	expect(scrolled.text).toMatch(
+		new RegExp(`^Scrolled\\. Position 0,${startedAt + 800} of `),
+	);
 	await agent('desktop_browser_scroll', {selector: '#bottom'});
 	expect(await inPage('Math.round(scrollY) > 800')).toBe(true);
 

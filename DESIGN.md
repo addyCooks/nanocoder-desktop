@@ -42,43 +42,43 @@ colors:
 typography:
   body-md:
     fontFamily: Fira Code
-    fontSize: 13px
+    fontSize: 15px
     fontWeight: 400
     lineHeight: 1.8
   body-sm:
     fontFamily: Fira Code
-    fontSize: 11px
+    fontSize: 13px
     fontWeight: 400
     lineHeight: 1.8
   tab:
     fontFamily: Fira Code
-    fontSize: 11px
+    fontSize: 13px
     fontWeight: 400
     lineHeight: 1.8
   code-sm:
     fontFamily: Fira Code
-    fontSize: 11px
+    fontSize: 13px
     fontWeight: 400
     lineHeight: 1.6
   meta:
     fontFamily: Fira Code
-    fontSize: 11px
+    fontSize: 12px
     fontWeight: 400
     lineHeight: 1.6
   caption:
     fontFamily: Fira Code
-    fontSize: 10px
+    fontSize: 12px
     fontWeight: 400
     lineHeight: 1.6
   label-section:
     fontFamily: Fira Code
-    fontSize: 9px
+    fontSize: 11px
     fontWeight: 400
     lineHeight: 1.6
     letterSpacing: 0.12em
   label-inline:
     fontFamily: Fira Code
-    fontSize: 10px
+    fontSize: 12px
     fontWeight: 400
     lineHeight: 1.6
     letterSpacing: 0.1em
@@ -97,9 +97,9 @@ spacing:
   lg: 10px
   xl: 14px
   xxl: 18px
-  rail-width: 222px
+  rail-width: 260px
   inspector-width: 480px
-  bottom-panel-height: 294px
+  bottom-panel-height: 360px
   stream-padding: 40px
   width-wide: 1240px
   width-mid: 1020px
@@ -362,16 +362,16 @@ Only locally bundled Fira Code 400, with Consolas, Menlo and monospace fallbacks
 
 | Token | Size and line height | Used for |
 |---|---|---|
-| `body-md` | 13px / 1.8 | Agent/user reading text and composer input. |
-| `body-sm` | 11px / 1.8 | Tool detail, reasoning, cards and notices. |
-| `tab` | 11px / 1.8 | Chrome, menu rows and toasts. |
-| `code-sm` | 11px / 1.6 | Reported code and tool output. |
-| `meta` | 11px / 1.6 | Actions and supporting copy. |
-| `caption` | 10px / 1.6 | Sidebar rows, badges and composer controls. |
-| `label-section` | 9px / 1.6 | Compact sidebar group labels. |
-| `label-inline` | 10px / 1.6 | Authors and small section labels. |
+| `body-md` | 15px / 1.8 | Agent/user reading text and composer input. |
+| `body-sm` | 13px / 1.8 | Tool detail, reasoning, cards and notices. |
+| `tab` | 13px / 1.8 | Chrome, menu rows and toasts. |
+| `code-sm` | 13px / 1.6 | Reported code and tool output. |
+| `meta` | 12px / 1.6 | Actions and supporting copy. |
+| `caption` | 12px / 1.6 | Sidebar rows, badges and composer controls. |
+| `label-section` | 11px / 1.6 | Compact sidebar group labels. |
+| `label-inline` | 12px / 1.6 | Authors and small section labels. |
 
-Chat headings may step up to 16px. The centred first action uses a 26px heading. Product copy is lowercase except Nanocoder, paths, commands and model names, which retain their real spelling. Use a middle dot to separate facts. British spelling applies.
+Chat headings may step up to 18px. The centred first action uses a 29px heading. Product copy is lowercase except Nanocoder, paths, commands and model names, which retain their real spelling. Use a middle dot to separate facts. British spelling applies.
 
 ## Layout
 
@@ -384,7 +384,7 @@ A compact full-height sidebar beside the conversation canvas. The title bar belo
 - Workbench: an optional right slot for later files/review/browser tools. It is absent when unused. At 840px and below an open workbench owns the conversation canvas and has an explicit back-to-chat action, while project navigation remains reachable.
 - Bottom area: optional terminal slot, absent when unused. No Milestone 2 or 3 controls ship as part of this overhaul.
 
-Reference sidebar widths are 222px at 1240, 204px at 1020 and 188px at 840. Reading-region horizontal padding is 40px, 30px and 24px. Do not squeeze three reading surfaces together at narrow widths. The window cannot be made narrower than 640px, because below about 560px the header actions leave it. A long project name is cut with an ellipsis in the header.
+Reference sidebar widths are 260px wide, 232px at 1050 and 212px at 840. The sidebar, the right workbench and the bottom terminal can each be resized by dragging their inner edge or with the arrow keys on that edge (a labelled separator); double-click or Enter restores the default, and the chosen sizes are kept on this device only. The sidebar stays between 180px and 420px, the workbench opens at 42% of the space beside the sidebar (720px at most) and leaves at least 420px for the conversation, and the bottom panel stays between 160px and three quarters of the window. Reading-region horizontal padding is 40px, 30px and 24px. Do not squeeze three reading surfaces together at narrow widths. The window cannot be made narrower than 640px, because below about 560px the header actions leave it. A long project name is cut with an ellipsis in the header.
 
 Browser placement in the right workbench is the approved visual direction only. Browser capabilities and any upstream whitepaper placement change remain with Milestone 3; this change builds no browser.
 
@@ -394,7 +394,7 @@ Flat tonal surfaces and hairlines. Cards use panel; dialogs use elevated. Only o
 
 ## Shapes
 
-Small control radii, comfortable message and composer radii. User messages have a panel fill, a 12px rounded shape and a small lower-right corner, inset from the left. The selected thread retains its 2px blue rule. View-only notices have dashed borders. Overlay corners are 15px.
+Small control radii, comfortable message and composer radii. User messages have a panel fill, a 12px rounded shape and a small lower-right corner, inset from the left. The selected thread uses a primary-soft fill with no side rule; other rows show an elevated fill on hover. View-only notices have dashed borders. Overlay corners are 15px.
 
 ## Components
 
@@ -420,7 +420,7 @@ A question offers only provided choices, no invented free-text reply. The deskto
 
 ### Composer
 
-Panel fill, 13px reading input, 13px corners, blue focus border. Compact model/mode controls below the input, with send aligned right. Native selects preserve their semantics. Model applies to the whole project; mode changes only between turns; yolo needs native consent and is never restored or a default. State refusals appear beside the locked control. Drafts remain editable and unqueued where allowed.
+Panel fill, 15px reading input, 13px corners, blue focus border. That border is the only focus mark while typing: the input draws no inner ring. Send is a round button with an arrow icon, filled primary when ready. Compact model/mode controls below the input, with send aligned right. Model, mode and browser profile choices use one custom dropdown: a combobox button with a listbox that opens above the composer, keyboard-driven (arrows, Home, End, Enter, Space, Escape), with the active option on a primary-soft fill and the selected one in primary ink. Model applies to the whole project; mode changes only between turns; yolo needs native consent and is never restored or a default. State refusals appear beside the locked control. Drafts remain editable and unqueued where allowed.
 
 Only reported context use can produce the context pill/gauge. No token estimate or context figure is fabricated. Helper text uses readable muted ink. Disabled input is not faded to unreadable opacity.
 
@@ -452,7 +452,7 @@ Files/review/browser and the user terminal are not implemented by the overhaul. 
 
 ## Iconography
 
-Text glyphs, never an icon font. Every glyph has a word or accessible name. The untouched official coloured logo is the only image in the M1 chrome, served locally under the existing CSP.
+Words first. Where an icon earns its place (send, new thread, archived, import, runtime details, shortcuts, dialog close, browser back, forward and reload, file tree chevrons), it is a Lucide line icon at 1.75 stroke, bundled locally as inline SVG, in current text colour, never an icon font, and always beside a word or behind an accessible name. Decorative text glyphs are retired; coloured state dots stay. Header actions (files, browser, terminal) are plain muted words with an elevated fill on hover and while their panel is open. Focus is one 2px primary ring, 1px from the control, shown for keyboard focus only; a control never draws a second ring inside a focused container. Disabled controls keep a solid border. The untouched official coloured logo is the only image in the M1 chrome, served locally under the existing CSP.
 
 ## Motion
 

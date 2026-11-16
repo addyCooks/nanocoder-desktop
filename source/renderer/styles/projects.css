@@ -6,7 +6,7 @@
 	/* 48.28px below the header in the reference, less the 20px stream padding */
 	margin: 28.28px auto 20px;
 	padding: 50px 30px;
-	font-size: 12px;
+	font-size: 14px;
 	line-height: 1.6;
 }
 .welcome-logo {
@@ -20,29 +20,29 @@
 .workspace-eyebrow,
 .workspace-setup-warning {
 	color: var(--colors-on-surface-muted);
-	font-size: 11px;
+	font-size: 13px;
 	line-height: 1.8;
 }
 .workspace-eyebrow {
-	font-size: 10px;
+	font-size: 13px;
 	letter-spacing: 0.1em;
 }
 .workspace-welcome > .workspace-eyebrow {
 	width: min(100%, 500px);
 	margin-bottom: -8px;
-	font-size: 12px;
+	font-size: 14px;
 	letter-spacing: 1.5px;
 }
 .workspace-welcome h2 {
 	justify-self: stretch;
-	font-size: 26px;
+	font-size: 29px;
 	font-weight: 400;
 	letter-spacing: -1px;
 	line-height: 1.35;
 }
 .welcome-lead {
 	color: var(--colors-on-surface-muted);
-	font-size: 12px;
+	font-size: 14px;
 	line-height: 1.9;
 }
 .welcome-open {
@@ -52,7 +52,7 @@
 	border-color: var(--colors-on-surface);
 	background: var(--colors-on-surface);
 	color: var(--colors-surface);
-	font-size: 12px;
+	font-size: 14px;
 }
 .welcome-open > span {
 	white-space: pre;
@@ -70,7 +70,7 @@
 .welcome-recents h3 {
 	margin: 0 0 3px;
 	color: var(--colors-on-surface-muted);
-	font-size: 9px;
+	font-size: 12px;
 	font-weight: 400;
 	letter-spacing: 0.12em;
 	line-height: 1.6;
@@ -92,7 +92,7 @@
 	border-color: transparent;
 	background: transparent;
 	color: var(--colors-on-surface);
-	font-size: 12px;
+	font-size: 14px;
 	line-height: 1.6;
 	text-align: left;
 	white-space: nowrap;
@@ -100,7 +100,7 @@
 .welcome-recent-glyph,
 .welcome-recent-end {
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 }
 .welcome-recent-glyph {
 	flex: none;
@@ -121,11 +121,11 @@
 }
 .welcome-recent-name {
 	color: var(--colors-on-surface);
-	font-size: 12px;
+	font-size: 14px;
 }
 .welcome-recent-text small {
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 }
 .welcome-recent-end {
 	display: flex;
@@ -146,7 +146,7 @@
 	border-color: transparent;
 	background: transparent;
 	color: var(--colors-on-surface-muted);
-	font-size: 12px;
+	font-size: 14px;
 	text-align: left;
 }
 .workspace-setup-warning {
@@ -155,7 +155,7 @@
 
 .project-trust-feedback {
 	width: 100%;
-	font-size: 11px;
+	font-size: 13px;
 	line-height: 1.8;
 	overflow-wrap: anywhere;
 }
@@ -213,7 +213,7 @@
 }
 .session-import-heading {
 	margin: 0;
-	font-size: 21px;
+	font-size: 24px;
 	font-weight: 400;
 	line-height: 1.35;
 	letter-spacing: -0.65px;
@@ -238,20 +238,20 @@
 	max-width: 670px;
 	margin: 0 0 26px;
 	color: var(--colors-on-surface-muted);
-	font-size: 12px;
+	font-size: 14px;
 	line-height: 1.6;
 }
 .session-import-note {
 	margin: 0;
 	color: var(--colors-on-surface-muted);
-	font-size: 11px;
+	font-size: 13px;
 	line-height: 1.8;
 }
 .session-import-note:not(:last-child) {
 	margin-bottom: 18px;
 }
 .session-import-footnote {
-	font-size: 10px;
+	font-size: 13px;
 	line-height: 1.6;
 }
 .session-import-notice {
@@ -260,7 +260,7 @@
 	border-radius: var(--rounded-xl);
 	background: var(--colors-surface-panel);
 	color: var(--colors-on-surface-muted);
-	font-size: 11px;
+	font-size: 13px;
 	line-height: 1.6;
 }
 .session-import-notice p {
@@ -269,7 +269,7 @@
 .session-import-notice p:first-child {
 	margin-bottom: 8px;
 	color: var(--colors-on-surface);
-	font-size: 13px;
+	font-size: 15px;
 	line-height: 1.35;
 }
 .session-import-list {
@@ -296,7 +296,7 @@
 .session-import-title {
 	margin: 0;
 	color: var(--colors-on-surface);
-	font-size: 15px;
+	font-size: 17px;
 	font-weight: 400;
 	line-height: 1.35;
 	overflow-wrap: anywhere;
@@ -304,7 +304,7 @@
 .session-import-meta {
 	margin: 0;
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 	line-height: 1.6;
 	overflow-wrap: anywhere;
 }
@@ -348,7 +348,7 @@
 .thread-view-only-title {
 	margin: 0;
 	color: var(--colors-on-surface);
-	font-size: 21px;
+	font-size: 24px;
 	font-weight: 400;
 	line-height: 1.4;
 	overflow-wrap: anywhere;
@@ -373,7 +373,7 @@
 	gap: 14px;
 }
 .thread-recovery-notice > h2 {
-	font-size: 16px;
+	font-size: 18px;
 	font-weight: 400;
 	line-height: 1.8;
 }
@@ -381,7 +381,7 @@
 	display: grid;
 	gap: 10px;
 	margin: 0;
-	font-size: 11px;
+	font-size: 13px;
 	line-height: 1.8;
 }
 .thread-recovery-metadata > div {
@@ -411,14 +411,14 @@
 .thread-recovery-note {
 	margin: 0;
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 	line-height: 1.8;
 }
 .view-only-footer {
 	margin: 0;
 	padding-top: 12px;
 	color: var(--colors-on-surface-muted);
-	font-size: 11px;
+	font-size: 13px;
 	line-height: 1.6;
 	text-align: center;
 }

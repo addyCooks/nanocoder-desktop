@@ -21,6 +21,7 @@ import {
 import type {BrowserRequests, BrowserResults} from '@/shared/browser';
 import type {DesktopApi} from '@/shared/desktop-api';
 import type {IpcResult} from '@/shared/ipc';
+import {choose, expectValue} from './qa/dropdown';
 import {electron} from './qa/electron';
 import {qaEnvironment} from './qa/environment';
 
@@ -877,14 +878,14 @@ async function openAddress(url: string) {
 test('BRW-05 the profile chosen in the panel decides where the page keeps its cookies', async () => {
 	await openBrowserTab();
 	const picker = page.getByRole('combobox', {name: 'browser profile'});
-	await expect(picker).toHaveValue('project');
-	await picker.selectOption('incognito');
-	await expect(picker).toHaveValue('incognito');
+	await expectValue(picker, 'project');
+	await choose(picker, 'incognito');
+	await expectValue(picker, 'incognito');
 	await openAddress(`127.0.0.1:${port}/cookie`);
 	expect(await cookiesIn(`browser-incognito-${projectId}`)).toEqual(['sid']);
 	expect(await cookiesIn(`persist:browser-${projectId}`)).toEqual([]);
-	await picker.selectOption('project');
-	await expect(picker).toHaveValue('project');
+	await choose(picker, 'project');
+	await expectValue(picker, 'project');
 	await expect(page.getByText('no page open')).toBeVisible();
 	await openAddress(`127.0.0.1:${port}/cookie`);
 	expect(await cookiesIn(`persist:browser-${projectId}`)).toEqual(['sid']);
@@ -896,19 +897,31 @@ test('BRW-05 a profile is added and removed from the panel, and removing asks fi
 	await page.getByRole('textbox', {name: 'new profile name'}).fill('Docs');
 	await page.getByRole('button', {name: 'add profile'}).click();
 	const picker = page.getByRole('combobox', {name: 'browser profile'});
-	await expect(picker.getByRole('option', {name: 'Docs'})).toHaveCount(1);
-	await picker.selectOption({label: 'Docs'});
+	await expect(
+		picker
+			.locator('xpath=..')
+			.getByRole('option', {name: 'Docs', includeHidden: true}),
+	).toHaveCount(1);
+	await choose(picker, {label: 'Docs'});
 	await openAddress(`127.0.0.1:${port}/cookie`);
 	await page.getByRole('button', {name: 'remove this profile'}).click();
 	await expect(page.getByRole('alert')).toContainText(
 		'remove the Docs profile',
 	);
 	await page.getByRole('button', {name: 'keep it'}).click();
-	await expect(picker.getByRole('option', {name: 'Docs'})).toHaveCount(1);
+	await expect(
+		picker
+			.locator('xpath=..')
+			.getByRole('option', {name: 'Docs', includeHidden: true}),
+	).toHaveCount(1);
 	await page.getByRole('button', {name: 'remove this profile'}).click();
 	await page.getByRole('button', {name: 'yes, remove it'}).click();
-	await expect(picker.getByRole('option', {name: 'Docs'})).toHaveCount(0);
-	await expect(picker).toHaveValue('project');
+	await expect(
+		picker
+			.locator('xpath=..')
+			.getByRole('option', {name: 'Docs', includeHidden: true}),
+	).toHaveCount(0);
+	await expectValue(picker, 'project');
 });
 
 test('BRW-08 clearing data from the panel asks first, then empties the profile and closes the page', async () => {

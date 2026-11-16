@@ -71,5 +71,5 @@ test('runtime and shortcut buttons render only when their owner passes a callbac
 	t.false(render().includes('aria-label="keyboard shortcuts"'));
 	const html = render({onOpenShortcuts: () => {}});
 	t.true(html.includes('aria-label="keyboard shortcuts"'));
-	t.regex(html, /footer-icon-button"[^>]*>\?<\/button>/);
+	t.regex(html, /footer-icon-button"[^>]*><svg[^>]*lucide-keyboard/);
 });

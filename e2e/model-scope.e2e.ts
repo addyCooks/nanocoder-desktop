@@ -14,6 +14,7 @@ import {
 	type Page,
 	test,
 } from '@playwright/test';
+import {choose, expectValue} from './qa/dropdown';
 import {electron} from './qa/electron';
 import {qaEnvironment} from './qa/environment';
 import {createDraftThread} from './qa/new-thread';
@@ -78,12 +79,12 @@ test('with per-session model state the model control follows the thread in view 
 	});
 	await input.fill('first thread request');
 	await input.press('Enter');
-	await expect(model).toHaveValue('old');
+	await expectValue(model, 'old');
 	await expect(
 		page.getByText('model applies to this thread only.'),
 	).toBeVisible();
-	await provider.selectOption('b');
-	await expect(model).toHaveValue('confirmed');
+	await choose(provider, 'b');
+	await expectValue(model, 'confirmed');
 
 	await createDraftThread(
 		page,
@@ -96,14 +97,14 @@ test('with per-session model state the model control follows the thread in view 
 	).toBeDisabled();
 	await input.fill('second thread request');
 	await input.press('Enter');
-	await expect(model).toHaveValue('old');
-	await expect(provider).toHaveValue('a');
+	await expectValue(model, 'old');
+	await expectValue(provider, 'a');
 
 	await page.locator('.thread-row[data-selected="false"] .thread-open').click();
-	await expect(model).toHaveValue('confirmed');
-	await expect(provider).toHaveValue('b');
+	await expectValue(model, 'confirmed');
+	await expectValue(provider, 'b');
 
 	await page.locator('.thread-row[data-selected="false"] .thread-open').click();
-	await expect(model).toHaveValue('old');
-	await expect(provider).toHaveValue('a');
+	await expectValue(model, 'old');
+	await expectValue(provider, 'a');
 });

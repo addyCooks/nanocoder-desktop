@@ -5,6 +5,7 @@ import {
 	type TreeRow,
 	treeKey,
 } from '@/renderer/files-controller';
+import {Icon} from '@/renderer/icons';
 import {displayName} from '@/shared/files';
 import type {ReviewMark} from '@/shared/review';
 
@@ -25,9 +26,10 @@ export function formatSize(bytes: number | null): string {
 	return `${(bytes / 1_048_576).toFixed(1)} MiB`;
 }
 
-function glyph(row: EntryRow): string {
-	if (row.expandable) return row.expanded ? '▾' : '▸';
-	return row.kind === 'file' ? '·' : '×';
+function glyph(row: EntryRow) {
+	if (row.expandable)
+		return <Icon name={row.expanded ? 'collapse' : 'expand'} size={14} />;
+	return row.kind === 'file' ? <Icon name="file" size={14} /> : null;
 }
 
 export function FileTree({
@@ -138,13 +140,9 @@ export function FileTree({
 						</span>
 						<span className="file-name">{displayName(row.name)}</span>
 						{row.link === 'outside' && (
-							<span className="file-flag">↗ outside project</span>
+							<span className="file-flag">outside project</span>
 						)}
-						{row.link === 'inside' && (
-							<span className="file-flag">
-								<span aria-hidden="true">↳ </span>link
-							</span>
-						)}
+						{row.link === 'inside' && <span className="file-flag">link</span>}
 						{row.unreadable && <span className="file-flag">unreadable</span>}
 						{mark && (
 							<span className="file-mark" data-mark={row.mark}>

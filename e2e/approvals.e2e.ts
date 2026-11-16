@@ -427,7 +427,10 @@ test('focused approvals stay fully visible across turns and widths in both theme
 			await page.keyboard.press('4');
 			await expect(cards()).toHaveCount(0);
 			await expect(input()).toBeFocused();
-			await expect(input()).toHaveCSS('outline-width', '2px');
+			await expect(page.locator('.gate-composer')).toHaveCSS(
+				'border-color',
+				theme === 'dark' ? 'rgb(122, 162, 247)' : 'rgb(0, 0, 238)',
+			);
 			await expect(page.locator('.ui-badge--approval')).toHaveCount(0);
 		}
 	}

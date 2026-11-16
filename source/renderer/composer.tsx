@@ -1,6 +1,8 @@
 import * as React from 'react';
 import type {AttachmentChip} from '@/renderer/attachments';
 import {composerEnter} from '@/renderer/composer-key';
+import {Dropdown} from '@/renderer/dropdown';
+import {Icon} from '@/renderer/icons';
 import {SlashSuggestions} from '@/renderer/stream-commands';
 import type {Transcript} from '@/renderer/transcript';
 import {Button} from '@/renderer/ui';
@@ -129,7 +131,6 @@ export function Composer(props: ComposerProps) {
 						disabled={props.stopping}
 						onClick={props.onCancel}
 					>
-						<span aria-hidden="true">✕ </span>
 						{props.stopping ? 'cancelling turn' : 'cancel turn'}
 					</Button>
 				)}
@@ -160,7 +161,7 @@ export function Composer(props: ComposerProps) {
 									aria-label={`remove ${chip.label}`}
 									onClick={() => props.onRemoveAttachment?.(chip.id)}
 								>
-									<span aria-hidden="true">✕</span>
+									remove
 								</button>
 							</li>
 						))}
@@ -209,31 +210,20 @@ export function Composer(props: ComposerProps) {
 				<div className="composer-control-rail">
 					{options.length ? (
 						options.map(option => (
-							<label
+							<Dropdown
 								key={option.id}
 								className={`composer-pill${option.id === 'model' ? ' composer-model' : ''}`}
-							>
-								<span aria-hidden="true">
-									{option.id === 'model' ? '✳ ' : ''}
-									{option.id}
-								</span>
-								<select
-									className="composer-inactive-control"
-									aria-label={`${option.id} for ${modelTarget}`}
-									aria-describedby={noteId}
-									value={option.currentValue}
-									disabled={!!modelReason}
-									onChange={event =>
-										props.onConfig(option.id, event.currentTarget.value)
-									}
-								>
-									{option.options.map(value => (
-										<option key={value.value} value={value.value}>
-											{value.name}
-										</option>
-									))}
-								</select>
-							</label>
+								placement="up"
+								aria-label={`${option.id} for ${modelTarget}`}
+								aria-describedby={noteId}
+								value={option.currentValue}
+								disabled={!!modelReason}
+								options={option.options.map(value => ({
+									value: value.value,
+									label: value.name,
+								}))}
+								onChange={value => props.onConfig(option.id, value)}
+							/>
 						))
 					) : (
 						<Button
@@ -244,28 +234,30 @@ export function Composer(props: ComposerProps) {
 							model · after first message
 						</Button>
 					)}
-					<label className="composer-pill composer-mode">
-						<span aria-hidden="true">mode</span>
-						<select
-							className="composer-inactive-control"
-							aria-label="mode for this thread"
-							aria-describedby={noteId}
-							value={props.mode}
-							disabled={!!modeReason}
-							onChange={event =>
-								props.onMode(event.currentTarget.value as NanocoderMode)
-							}
-						>
-							{modes.map(mode => (
-								<option key={mode} value={mode}>
-									{mode}
-								</option>
-							))}
-						</select>
-					</label>
+					<Dropdown
+						className="composer-pill composer-mode"
+						placement="up"
+						aria-label="mode for this thread"
+						aria-describedby={noteId}
+						value={props.mode}
+						disabled={!!modeReason}
+						options={modes.map(mode => ({value: mode, label: mode}))}
+						onChange={value => props.onMode(value as NanocoderMode)}
+					/>
+					<button
+						type="button"
+						className="composer-options-toggle"
+						aria-label="mode and project default details"
+						title="mode and project default"
+						aria-expanded={optionsOpen}
+						aria-controls={optionsId}
+						onClick={() => setOptionsOpen(open => !open)}
+					>
+						<Icon name="more" size={16} />
+					</button>
 					{context && (
 						<span className="composer-pill composer-context">
-							⌁ ctx {percentage}%
+							ctx {percentage}%
 						</span>
 					)}
 					<Button
@@ -282,10 +274,10 @@ export function Composer(props: ComposerProps) {
 						disabled={!!sendReason || emptyDraft}
 						aria-describedby={descriptionId}
 					>
-						<span aria-hidden="true">↑ </span>send
+						<Icon name="send" size={18} />
 					</Button>
 				</div>
-				<p id={helpId} className="gate-hint composer-help">
+				<p id={helpId} className="sr-only composer-help">
 					<span>↵ send · ⇧↵ newline</span>
 					{props.commands.length > 0 && <span>/ advertised commands</span>}
 				</p>
@@ -305,21 +297,11 @@ export function Composer(props: ComposerProps) {
 				)}
 			</form>
 			<div className="composer-options">
-				<p className="gate-hint composer-control-note">
-					<span id={noteId}>{note}</span>{' '}
-					<button
-						type="button"
-						className="composer-options-toggle"
-						aria-expanded={optionsOpen}
-						aria-controls={optionsId}
-						onClick={() => setOptionsOpen(open => !open)}
-					>
-						<span aria-hidden="true">{optionsOpen ? '▾ ' : '▸ '}</span>
-						mode and project default details
-					</button>
+				<p className="sr-only">
+					<span id={noteId}>{note}</span>
 				</p>
 				{props.modePending && (
-					<p className="gate-hint">{props.mode} · pending first message.</p>
+					<p className="sr-only">{props.mode} · pending first message.</p>
 				)}
 				<div id={optionsId} className="gate-actions" hidden={!optionsOpen}>
 					<Button

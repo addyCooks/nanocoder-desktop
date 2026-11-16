@@ -7,8 +7,8 @@
 	border-radius: 10px;
 	background: var(--components-subagent-card-background-color);
 	color: var(--colors-on-surface);
-	font-size: 11px;
-	line-height: 19.8px;
+	font-size: 13px;
+	line-height: 24px;
 	overflow-wrap: anywhere;
 }
 
@@ -25,7 +25,7 @@
 .subagent-task {
 	flex: 1 1 0;
 	min-width: 0;
-	font-size: 12px;
+	font-size: 14px;
 }
 
 .subagent-state {
@@ -55,8 +55,8 @@
 	padding: 5px 11px;
 	border-radius: 7px;
 	background: transparent;
-	font-size: 10px;
-	line-height: 18px;
+	font-size: 13px;
+	line-height: 22px;
 }
 
 .subagent-foot .ui-button:not(:disabled) {

@@ -1,0 +1,261 @@
+.shell-project-rail,
+.shell-workbench,
+.shell-bottom-panel {
+	position: relative;
+}
+
+.app-shell {
+	grid-template-columns:
+		var(--shell-rail-width, var(--spacing-rail-width))
+		minmax(0, 1fr);
+}
+
+.shell-workbench {
+	flex: 0 0 var(--shell-workbench-width, min(42%, 720px));
+}
+
+.resize-handle {
+	position: absolute;
+	z-index: 5;
+	touch-action: none;
+}
+
+.resize-handle--x {
+	top: 0;
+	bottom: 0;
+	width: 6px;
+	cursor: col-resize;
+}
+
+.resize-handle--y {
+	left: 0;
+	right: 0;
+	height: 6px;
+	cursor: row-resize;
+}
+
+.shell-rail-resize {
+	right: 0;
+}
+
+.shell-workbench-resize {
+	left: 0;
+}
+
+.shell-bottom-resize {
+	top: 0;
+}
+
+.resize-handle::after {
+	content: "";
+	position: absolute;
+	background: transparent;
+	transition: background-color 120ms ease;
+}
+
+.resize-handle--x::after {
+	top: 0;
+	bottom: 0;
+	width: 2px;
+}
+
+.shell-rail-resize::after {
+	right: 0;
+}
+
+.shell-workbench-resize::after {
+	left: 0;
+}
+
+.resize-handle--y::after {
+	left: 0;
+	right: 0;
+	top: 0;
+	height: 2px;
+}
+
+.resize-handle:hover::after,
+.resize-handle[data-dragging]::after,
+.resize-handle:focus-visible::after {
+	background: var(--colors-primary);
+}
+
+.resize-handle:focus-visible {
+	outline: none;
+}
+
+.app-shell:has(.resize-handle[data-dragging]) {
+	user-select: none;
+}
+
+@media (max-width: 1050px) {
+	.app-shell {
+		grid-template-columns: var(--shell-rail-width, 232px) minmax(0, 1fr);
+	}
+}
+
+@media (max-width: 840px) {
+	.app-shell {
+		grid-template-columns: var(--shell-rail-width, 212px) minmax(0, 1fr);
+	}
+	.shell-workbench {
+		flex-basis: 100%;
+	}
+	.shell-workbench-resize {
+		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.resize-handle::after {
+		transition: none;
+	}
+}
+
+.dropdown {
+	position: relative;
+	min-width: 0;
+}
+
+.dropdown-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	height: 100%;
+	min-height: 34px;
+	padding: 0 10px;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	background: var(--colors-surface-elevated);
+	color: var(--colors-on-surface);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.dropdown-trigger::after {
+	content: "";
+	flex: none;
+	width: 6px;
+	height: 6px;
+	margin-top: -3px;
+	border-right: 1.5px solid currentColor;
+	border-bottom: 1.5px solid currentColor;
+	opacity: 0.6;
+	transform: rotate(45deg);
+}
+
+.dropdown[data-open] .dropdown-trigger::after {
+	margin-top: 3px;
+	transform: rotate(225deg);
+}
+
+.dropdown-trigger:hover:not(:disabled) {
+	border-color: var(--colors-stroke);
+}
+
+.dropdown-trigger:focus-visible {
+	outline: 2px solid var(--colors-primary);
+	outline-offset: 0;
+}
+
+.dropdown-trigger:disabled {
+	cursor: not-allowed;
+	color: var(--colors-on-surface-muted);
+}
+
+.dropdown-value {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dropdown-list {
+	position: fixed;
+	z-index: 40;
+	box-sizing: border-box;
+	max-height: 280px;
+	margin: 0;
+	padding: 4px;
+	overflow-y: auto;
+	list-style: none;
+	border: 1px solid var(--colors-stroke);
+	border-radius: 8px;
+	background: var(--colors-surface-elevated);
+	box-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
+}
+
+.dropdown-list[hidden] {
+	display: none;
+}
+
+.dropdown-option {
+	padding: 7px 10px;
+	border-radius: 5px;
+	color: var(--colors-on-surface);
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.dropdown-option[data-active] {
+	background: var(--colors-primary-soft);
+}
+
+.dropdown-option[aria-selected="true"] {
+	color: var(--colors-primary);
+}
+
+.ui-icon {
+	flex: none;
+	display: block;
+	color: currentColor;
+}
+
+.ui-button .ui-icon,
+.sidebar-link .ui-icon {
+	opacity: 0.85;
+}
+
+.composer .composer-send .ui-icon {
+	opacity: 1;
+}
+
+.file-glyph {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 14px;
+	color: var(--colors-on-surface-muted);
+}
+
+.browser-profile .dropdown {
+	min-width: 220px;
+}
+
+.browser-profile .dropdown-trigger {
+	min-height: 32px;
+}
+
+.ui-button.close-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	min-width: 32px;
+	height: 32px;
+	min-height: 32px;
+	padding: 0;
+	border-color: transparent;
+	background: transparent;
+	color: var(--colors-on-surface-muted);
+}
+
+.ui-button.close-button:hover:not(:disabled) {
+	background: var(--colors-surface-elevated);
+	color: var(--colors-on-surface);
+}

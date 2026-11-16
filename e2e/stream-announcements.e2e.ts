@@ -327,7 +327,7 @@ test('the clipped status never creates document overflow or steals shell width i
 				expect(geometry).toEqual({
 					html: [width, 900, width],
 					body: [width, 900],
-					stream: width - (width <= 840 ? 188 : width <= 1050 ? 204 : 222),
+					stream: width - (width <= 840 ? 212 : width <= 1050 ? 232 : 260),
 				});
 			}
 		}

@@ -57,7 +57,7 @@ test('header shows the thread identity, and the thread actions button only when 
 			children: null,
 		}),
 	);
-	t.true(thread.includes('tide / conversation'));
+	t.true(thread.includes('<p class="shell-breadcrumb">tide</p>'));
 	t.true(thread.includes('fixture thread'));
 	t.false(thread.includes('aria-label="thread actions"'));
 	const wired = renderToStaticMarkup(
@@ -75,7 +75,7 @@ test('header shows the thread identity, and the thread actions button only when 
 	);
 	t.true(welcome.includes('local workspace'));
 	t.true(welcome.includes('your projects'));
-	t.false(welcome.includes('conversation</p>'));
+	t.false(welcome.includes('thread actions'));
 });
 
 test('composer placement defaults to the bottom and passes the centred state through', t => {
@@ -124,7 +124,7 @@ test('later workbench and bottom slots preserve plain children with an explicit 
 		}),
 	);
 	t.true(html.includes('data-shell-slot="workbench"'));
-	t.true(html.includes('back to chat'));
+	t.regex(html, /aria-label="(close panel|back to chat)"/);
 	t.true(html.includes('panel fixture'));
 	t.true(html.includes('data-shell-slot="bottom-panel"'));
 	t.true(html.includes('terminal fixture'));

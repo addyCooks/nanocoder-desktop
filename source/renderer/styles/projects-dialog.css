@@ -5,12 +5,12 @@
 .project-switch {
 	display: flex;
 	align-items: center;
-	gap: var(--spacing-md);
+	gap: 8px;
 	width: 100%;
-	padding: var(--spacing-md);
-	border: 1px solid var(--colors-stroke);
+	padding: 6px;
+	border: 1px solid transparent;
 	border-radius: var(--rounded-lg);
-	background: var(--colors-surface);
+	background: transparent;
 	color: var(--colors-on-surface);
 	font: inherit;
 	line-height: 1.6;
@@ -18,15 +18,19 @@
 	cursor: pointer;
 }
 
+.project-switch:hover {
+	background: var(--colors-surface-elevated);
+}
+
 .project-initial {
 	flex: none;
-	width: 25px;
-	height: 25px;
+	width: 22px;
+	height: 22px;
 	display: grid;
 	place-items: center;
 	border-radius: var(--rounded-md);
 	background: var(--colors-surface-elevated);
-	font-size: 12px;
+	font-size: 14px;
 }
 
 .project-switch-text {
@@ -44,12 +48,12 @@
 }
 
 .project-switch-name {
-	font-size: 12px;
+	font-size: 14px;
 }
 
 .project-switch-root {
 	color: var(--colors-on-surface-muted);
-	font-size: 9px;
+	font-size: 12px;
 }
 
 .project-switch-chevron {
@@ -109,7 +113,7 @@ button.projects-dialog-row {
 }
 
 .projects-dialog-name {
-	font-size: 12px;
+	font-size: 14px;
 	overflow-wrap: anywhere;
 }
 

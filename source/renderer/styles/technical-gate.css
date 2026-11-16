@@ -31,6 +31,10 @@ dt,
 	border-color: var(--colors-primary);
 }
 
+.gate-composer:has(:focus-visible:not(textarea)) {
+	border-color: var(--colors-stroke);
+}
+
 .gate-composer label {
 	display: grid;
 	gap: var(--spacing-sm);

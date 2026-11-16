@@ -5,7 +5,7 @@
 	gap: 8px;
 	min-height: 0;
 	padding: 0 13px 13px;
-	font-size: 11px;
+	font-size: 13px;
 }
 
 .workbench .sr-only {
@@ -64,7 +64,7 @@
 .files-hint {
 	margin: 0;
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 }
 
 .workbench
@@ -132,7 +132,7 @@
 .file-size,
 .file-notice {
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 }
 
 .file-size {
@@ -187,7 +187,7 @@
 }
 
 .file-preview-title h3 {
-	font-size: 12px;
+	font-size: 14px;
 	font-weight: 600;
 }
 
@@ -195,7 +195,7 @@
 .file-preview-meta {
 	margin: 0;
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 	overflow-wrap: anywhere;
 }
 
@@ -241,7 +241,7 @@
 	overflow: auto;
 	color: var(--colors-on-surface);
 	font-family: var(--typography-code-font-family, inherit);
-	font-size: 12px;
+	font-size: 14px;
 	white-space: pre;
 }
 
@@ -274,7 +274,7 @@
 
 .review-commits h3 {
 	margin: 0 0 4px;
-	font-size: 11px;
+	font-size: 13px;
 }
 
 .review-commits ul,
@@ -310,7 +310,7 @@
 
 .review-state {
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 }
 
 .review-diff {
@@ -363,7 +363,7 @@
 		--components-diff-font-family,
 		var(--typography-code-font-family, inherit)
 	);
-	font-size: 11px;
+	font-size: 13px;
 }
 
 .diff-row {
@@ -476,7 +476,7 @@
 	border-radius: 999px;
 	background: var(--colors-surface-elevated);
 	color: var(--colors-on-surface);
-	font-size: 10px;
+	font-size: 13px;
 }
 
 .composer-chip-label {

@@ -218,6 +218,10 @@ test('keyboard focus is visible on buttons and the message input', async () => {
 	const rail = page.getByRole('region', {name: 'project threads'});
 	const input = page.getByRole('textbox', {name: 'message'});
 	const send = page.getByRole('button', {name: 'send', exact: true});
+	const mode = page.getByRole('combobox', {
+		name: 'mode for this thread',
+		exact: true,
+	});
 	const importLink = rail.locator('.sidebar-link', {
 		hasText: 'import sessions',
 	});
@@ -237,7 +241,11 @@ test('keyboard focus is visible on buttons and the message input', async () => {
 		palette,
 		page.getByRole('region', {name: 'conversation', exact: true}),
 		input,
-		page.getByRole('combobox', {name: 'mode for this thread', exact: true}),
+		mode,
+		page.getByRole('button', {
+			name: 'mode and project default details',
+			exact: true,
+		}),
 		send,
 	];
 	await expect(
@@ -247,7 +255,11 @@ test('keyboard focus is visible on buttons and the message input', async () => {
 	for (const [index, control] of focusOrder.entries()) {
 		if (index > 0) await page.keyboard.press('Tab');
 		await expect(control).toBeFocused();
-		await expect(control).toHaveCSS('outline-width', '2px');
+		if (control === input) {
+			await expect(input).toHaveCSS('outline-style', 'none');
+		} else {
+			await expect(control).toHaveCSS('outline-width', '2px');
+		}
 		if (control === input) {
 			await expect(input).toHaveAccessibleDescription(
 				'ready for your next message; enter a message to send ↵ send · ⇧↵ newline',
@@ -303,7 +315,9 @@ test('approval parts have named actions and no new contrast gaps in either theme
 	for (const [index, control] of focusOrder.entries()) {
 		if (index > 0) await page.keyboard.press('Tab');
 		await expect(control).toBeFocused();
-		await expect(control).toHaveCSS('outline-width', '2px');
+		if (index === focusOrder.length - 1)
+			await expect(control).toHaveCSS('outline-style', 'none');
+		else await expect(control).toHaveCSS('outline-width', '2px');
 	}
 	await expect(
 		page.getByRole('button', {name: 'send', exact: true}),
@@ -422,11 +436,11 @@ test('running and failed badge backgrounds and failure typography follow their c
 			}
 			await expect(page.locator('#token-fixture .ui-card--failure')).toHaveCSS(
 				'font-size',
-				'11px',
+				'13px',
 			);
 			await expect(page.locator('#token-fixture .ui-card--failure')).toHaveCSS(
 				'line-height',
-				'19.8px',
+				'23.4px',
 			);
 			expect(await visibleTextContrast(page, theme)).toEqual([]);
 		}
@@ -485,7 +499,7 @@ test('a child exit shows a failed turn without a stale ACP readiness claim in ei
 		);
 		const failure = page.getByRole('alert');
 		await expect(failure).toContainText('Nanocoder stopped during the turn');
-		await expect(failure).toHaveCSS('font-size', '11px');
+		await expect(failure).toHaveCSS('font-size', '13px');
 		// The badge only: the stream announcement region is also a status and says "turn failed".
 		await expect(
 			page.locator('.ui-badge[role="status"]').filter({hasText: 'failed'}),
@@ -549,10 +563,7 @@ test('a child exit shows a failed turn without a stale ACP readiness claim in ei
 			'background-color',
 			theme === 'dark' ? 'rgb(32, 42, 59)' : 'rgb(220, 230, 250)',
 		);
-		await expect(selected).toHaveCSS(
-			'border-left-color',
-			theme === 'dark' ? 'rgb(122, 162, 247)' : 'rgb(0, 0, 238)',
-		);
+		await expect(selected).toHaveCSS('border-left-color', 'rgba(0, 0, 0, 0)');
 		const rendered = await glyph.evaluate(element => {
 			const style = getComputedStyle(element);
 			const rgb = (value: string) =>

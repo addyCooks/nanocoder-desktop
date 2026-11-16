@@ -8,9 +8,9 @@
 .shell-project-rail {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 10px;
 	min-width: 0;
-	padding: 14px 10px 10px;
+	padding: 0 8px 8px;
 	overflow: auto;
 	background: var(--colors-surface-panel);
 	color: var(--colors-on-surface-muted);
@@ -20,16 +20,19 @@
 
 .shell-brand {
 	display: flex;
+	flex: none;
 	align-items: center;
 	gap: 8px;
-	padding: 2px 3px 9px;
+	min-height: 52px;
+	margin: 0;
+	padding: 0 6px;
 	color: var(--colors-on-surface);
-	font-size: 12px;
+	font-size: 14px;
 }
 
 .official-logo {
-	width: 29px;
-	height: 29px;
+	width: 22px;
+	height: 22px;
 	object-fit: contain;
 	border-radius: 3px;
 	flex-shrink: 0;
@@ -37,11 +40,11 @@
 
 .shell-sidebar-footer {
 	display: grid;
-	gap: 4px;
+	gap: 2px;
 	margin-top: auto;
-	padding: 8px 0 0;
+	padding: 6px 0 0;
 	border-top: 1px solid var(--colors-stroke);
-	font-size: 9px;
+	font-size: 12px;
 }
 
 .shell-main-area,
@@ -59,44 +62,42 @@
 	display: flex;
 	align-items: center;
 	gap: 16px;
-	min-height: 66px;
-	padding: 0 26px;
+	min-height: 52px;
+	padding: 0 20px;
+	border-bottom: 1px solid var(--colors-stroke);
 	color: var(--colors-on-surface-muted);
 	font-size: var(--typography-tab-font-size);
 }
 
 .shell-identity {
+	display: flex;
 	flex: 1;
+	align-items: baseline;
+	gap: 10px;
 	min-width: 0;
 }
 
 .shell-breadcrumb {
+	flex: 0 1 auto;
+	min-width: 0;
 	margin: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	font-size: 10px;
-	line-height: 16px;
-}
-
-.shell-title-row {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	min-width: 0;
-	margin-top: 3px;
+	font-size: 13px;
+	line-height: 20px;
 }
 
 .shell-identity h2 {
+	flex: 0 1 auto;
 	min-width: 0;
 	margin: 0;
-	padding-block: 10px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	color: var(--colors-on-surface);
-	font-size: 13px;
-	line-height: 1.6;
+	font-size: 14px;
+	line-height: 24px;
 }
 
 .shell-menu-button {
@@ -120,6 +121,18 @@
 .shell-header-actions > .ui-button {
 	border-color: transparent;
 	background: transparent;
+	color: var(--colors-on-surface-muted);
+}
+
+.shell-header-actions > .ui-button:hover:not(:disabled) {
+	border-color: transparent;
+	background: var(--colors-surface-elevated);
+	color: var(--colors-on-surface);
+}
+
+.shell-header-actions > .ui-button[aria-expanded="true"] {
+	background: var(--colors-surface-elevated);
+	color: var(--colors-on-surface);
 }
 
 .shell-header-actions kbd {
@@ -127,13 +140,13 @@
 	border-radius: 4px;
 	background: var(--colors-surface-elevated);
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
-	line-height: 16px;
+	font-size: 13px;
+	line-height: 20px;
 }
 
 .shell-header-actions .ui-badge {
-	font-size: 11px;
-	line-height: 17.6px;
+	font-size: 13px;
+	line-height: 22px;
 }
 
 .shell-heading {
@@ -200,7 +213,7 @@
 
 .shell-workbench {
 	display: flex;
-	flex: 0 0 48%;
+	flex: 0 0 min(42%, 720px);
 	flex-direction: column;
 	min-width: 0;
 	min-height: 0;
@@ -215,12 +228,9 @@
 	justify-content: space-between;
 	gap: 8px;
 	padding: 10px 13px;
-	font-size: 11px;
+	font-size: 13px;
 }
 
-.workbench-close-narrow {
-	display: none;
-}
 .shell-bottom-panel {
 	flex: none;
 	min-height: 0;
@@ -228,13 +238,13 @@
 
 @media (max-width: 1050px) {
 	.app-shell {
-		grid-template-columns: 204px minmax(0, 1fr);
+		grid-template-columns: 232px minmax(0, 1fr);
 	}
 	.shell-project-rail {
 		padding-inline: 8px;
 	}
 	.shell-title-bar {
-		padding-inline: 22px;
+		padding-inline: 18px;
 		gap: 10px;
 	}
 	.shell-header-actions {
@@ -254,21 +264,13 @@
 
 @media (max-width: 840px) {
 	.app-shell {
-		grid-template-columns: 188px minmax(0, 1fr);
+		grid-template-columns: 212px minmax(0, 1fr);
 	}
 	.shell-brand {
-		font-size: 11px;
-	}
-	.official-logo {
-		width: 26px;
-		height: 26px;
+		font-size: 13px;
 	}
 	.shell-title-bar {
-		padding-inline: 18px;
-		min-height: 62px;
-	}
-	.shell-identity h2 {
-		font-size: 12px;
+		padding-inline: 16px;
 	}
 	/* the reference reading column is inset 27px, the composer 24px */
 	.shell-stream-scroll {
@@ -286,12 +288,6 @@
 	.shell-workbench {
 		flex-basis: 100%;
 		border-left: 0;
-	}
-	.workbench-close-wide {
-		display: none;
-	}
-	.workbench-close-narrow {
-		display: inline;
 	}
 }
 

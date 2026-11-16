@@ -71,10 +71,7 @@ export const SubagentRunCard = React.memo(function SubagentRunCard({
 			tabIndex={-1}
 		>
 			<div className="subagent-head">
-				<span className="subagent-task">
-					<span aria-hidden="true">⌗ </span>
-					{subagentLabel(task) ?? name}
-				</span>
+				<span className="subagent-task">{subagentLabel(task) ?? name}</span>
 				<span
 					className={`subagent-state${
 						historyError

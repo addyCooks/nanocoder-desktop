@@ -4,21 +4,30 @@
 	justify-content: space-between;
 	gap: 12px;
 	min-height: 16px;
-	margin-bottom: 8px;
-	padding: 0 4px;
+	margin-bottom: 6px;
+	padding: 0 14px;
+}
+
+.composer-control-rail > .ui-button:not(.composer-send) {
+	min-height: 34px;
+	padding: 0 10px;
+	border-color: transparent;
+	border-radius: 6px;
+	background: var(--colors-surface-elevated);
+	font-size: 13px;
 }
 
 .composer-hint-row .gate-hint {
 	flex: 1 1 auto;
 	margin: 0;
-	font-size: 10px;
-	line-height: 16px;
+	font-size: 13px;
+	line-height: 20px;
 }
 
 .composer-cancel {
-	min-height: 32px;
+	min-height: 36px;
 	padding: 0 10px;
-	font-size: 10px;
+	font-size: 13px;
 	white-space: nowrap;
 }
 
@@ -29,8 +38,8 @@
 	min-width: 0;
 	overflow: hidden;
 	gap: 0;
-	padding: 21px 13px 10px;
-	border-radius: 13px;
+	padding: 14px 12px 8px;
+	border-radius: 14px;
 }
 
 .composer .composer-inactive-control:disabled {
@@ -47,7 +56,7 @@
 	display: block;
 	width: 100%;
 	min-width: 0;
-	min-height: 53px;
+	min-height: 56px;
 	max-height: 160px;
 	resize: none;
 	margin: 0;
@@ -65,7 +74,7 @@
 }
 
 .composer textarea:focus-visible {
-	outline-offset: -2px;
+	outline: none;
 }
 
 .composer-control-rail {
@@ -74,7 +83,7 @@
 	align-items: center;
 	gap: 5px;
 	min-width: 0;
-	min-height: 32px;
+	min-height: 36px;
 }
 
 .composer .composer-pill {
@@ -84,86 +93,73 @@
 	box-sizing: border-box;
 	min-width: 0;
 	max-width: 100%;
-	height: 31px;
+	height: 34px;
 	padding: 0 8px;
 	border: 0;
 	border-radius: 6px;
 	background: var(--colors-surface-elevated);
 	color: var(--colors-on-surface-muted);
-	font-size: 11px;
+	font-size: 13px;
 }
 
 .composer .composer-model {
-	width: 176px;
+	width: 210px;
 	padding: 0;
 }
 
 .composer .composer-mode {
-	width: 116px;
+	width: 140px;
 	padding: 0;
 }
 
-.composer-pill > span {
-	display: none;
+.composer .dropdown.composer-pill {
+	padding: 0;
+	background: transparent;
 }
 
-.composer-pill select {
-	box-sizing: border-box;
-	width: 100%;
-	min-width: 0;
-	height: 31px;
-	border: 0;
-	color: var(--colors-on-surface);
-	background: var(--colors-surface-elevated);
-	font: inherit;
-	font-size: 10px;
+.composer .composer-pill .dropdown-trigger {
+	height: 34px;
+	font-size: 13px;
 }
 
-.composer .composer-mode select,
-.composer .composer-mode select:disabled {
+.composer .composer-mode .dropdown-trigger,
+.composer .composer-mode .dropdown-trigger:disabled {
 	color: var(--colors-primary);
 }
 
-.composer .composer-pill:has(select:focus-visible) {
-	outline: 2px solid var(--colors-primary);
-	outline-offset: 2px;
-	border-radius: 8px;
-}
-
 .composer .composer-context {
-	border: 1px dashed var(--colors-stroke);
-	border-radius: 7px;
+	border-radius: 6px;
 }
 
 .composer .composer-send {
 	box-sizing: border-box;
-	min-width: 64px;
-	height: 32px;
+	justify-content: center;
+	width: 34px;
+	min-width: 34px;
+	height: 34px;
+	min-height: 34px;
 	margin-left: auto;
-	padding: 0 10px;
-	border: 1px solid var(--colors-stroke);
-	border-radius: 6px;
-	background: transparent;
-	font-size: 11px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: var(--colors-surface-elevated);
+	font-size: 16px;
+	line-height: 1;
 	color: var(--colors-on-surface-muted);
 }
 
-.composer .composer-send[data-state="ready"] {
-	color: var(--colors-primary);
+.composer .composer-send[data-state="ready"]:not(:disabled) {
+	background: var(--colors-primary);
+	color: var(--colors-surface);
+}
+
+.composer .composer-send[data-state="ready"]:not(:disabled):hover {
+	background: var(--colors-primary);
+	opacity: 0.88;
 }
 
 .composer .composer-send[data-state="running"] {
 	color: var(--colors-on-surface);
-}
-
-.composer .composer-help {
-	display: flex;
-	justify-content: space-between;
-	gap: 12px;
-	min-height: 22px;
-	margin: 0;
-	font-size: 9px;
-	line-height: 22.39px;
 }
 
 .composer-context-gauge {
@@ -176,28 +172,38 @@
 	background: var(--colors-primary);
 }
 
-.composer-options .composer-control-note {
-	margin: 8px 0 0;
-	font-size: 9px;
-	line-height: 14.4px;
-	overflow-wrap: anywhere;
-}
-
 .composer-options {
-	font-size: 9px;
+	position: relative;
+	padding-inline: 14px;
+	font-size: 12px;
 	color: var(--colors-on-surface-muted);
 }
 .composer-options-toggle {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
 	padding: 0;
 	border: 0;
+	border-radius: 6px;
 	background: transparent;
-	color: inherit;
-	font: inherit;
+	color: var(--colors-on-surface-muted);
 	cursor: pointer;
+}
+.composer-options-toggle:hover,
+.composer-options-toggle[aria-expanded="true"] {
+	background: var(--colors-surface-elevated);
+	color: var(--colors-on-surface);
+}
+.composer-options-toggle:focus-visible {
+	outline: 2px solid var(--colors-primary);
+	outline-offset: 0;
 }
 .composer-options .ui-button {
 	min-height: 28px;
-	font-size: 10px;
+	font-size: 13px;
 	margin-top: 7px;
 }
 .composer-options .gate-actions > .gate-hint {
@@ -207,7 +213,8 @@
 	display: none;
 }
 
-.composer .sr-only {
+.composer .sr-only,
+.composer-options .sr-only {
 	position: absolute;
 	width: 1px;
 	height: 1px;

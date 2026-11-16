@@ -15,6 +15,7 @@ import {
 	test,
 } from '@playwright/test';
 import type {DesktopApi} from '@/shared/desktop-api';
+import {choose, expectValue} from './qa/dropdown';
 import {electron} from './qa/electron';
 import {qaEnvironment} from './qa/environment';
 import {createDraftThread} from './qa/new-thread';
@@ -112,12 +113,14 @@ test('multiline composer keeps drafts, ignores IME Enter and changes mode/defaul
 		isComposing: true,
 		keyCode: 229,
 	});
-	await page
-		.getByRole('combobox', {name: 'mode for this thread', exact: true})
-		.selectOption('plan');
-	await expect(
+	await choose(
 		page.getByRole('combobox', {name: 'mode for this thread', exact: true}),
-	).toHaveValue('plan');
+		'plan',
+	);
+	await expectValue(
+		page.getByRole('combobox', {name: 'mode for this thread', exact: true}),
+		'plan',
+	);
 	await page
 		.getByRole('button', {
 			name: 'mode and project default details',
@@ -184,15 +187,15 @@ test('model controls use the confirmed provider response and remain available on
 		name: /model for every thread in project/,
 	});
 	await expect(provider).toBeEnabled();
-	await provider.selectOption('b');
-	await expect(provider).toHaveValue('b');
-	await expect(model).toHaveValue('confirmed');
+	await choose(provider, 'b');
+	await expectValue(provider, 'b');
+	await expectValue(model, 'confirmed');
 	await createDraftThread(
 		page,
 		page.getByRole('button', {name: 'new thread', exact: true}),
 	);
 	await expect(model).toBeEnabled();
-	await expect(model).toHaveValue('confirmed');
+	await expectValue(model, 'confirmed');
 	const threads = await page.evaluate(async () => {
 		const {desktop} = window as unknown as {desktop: DesktopApi};
 		const ui = await desktop.getUiState({});
@@ -229,18 +232,18 @@ test('native yolo cancellation is the default and accepted pending yolo is never
 	});
 	const input = page.getByRole('textbox', {name: 'message', exact: true});
 	await input.fill('preserved fixture draft');
-	await mode.selectOption('yolo');
+	await choose(mode, 'yolo');
 	await expect(mode).toBeEnabled();
-	await expect(mode).toHaveValue('normal');
+	await expectValue(mode, 'normal');
 	await expect(input).toHaveValue('preserved fixture draft');
 	await app.evaluate(() => {
 		(globalThis as unknown as {acceptYolo: boolean}).acceptYolo = true;
 	});
-	await mode.selectOption('yolo');
-	await expect(mode).toHaveValue('yolo');
+	await choose(mode, 'yolo');
+	await expectValue(mode, 'yolo');
 	await expect(
 		page.getByText('yolo · pending first message.', {exact: false}),
-	).toBeVisible();
+	).toBeAttached();
 	await page
 		.getByRole('button', {
 			name: 'mode and project default details',
@@ -268,7 +271,7 @@ test('native yolo cancellation is the default and accepted pending yolo is never
 			? undefined
 			: `restartProject error code: ${restarted.error.code}`,
 	).toBe('ready');
-	await expect(mode).toHaveValue('normal');
+	await expectValue(mode, 'normal');
 	const calls = await app.evaluate(
 		() =>
 			(
@@ -295,12 +298,12 @@ test('cancelling yolo preserves an earlier pending plan and its draft through fi
 	});
 	const input = page.getByRole('textbox', {name: 'message', exact: true});
 	await input.fill('fixture plan after cancelled yolo');
-	await mode.selectOption('plan');
-	await expect(mode).toHaveValue('plan');
+	await choose(mode, 'plan');
+	await expectValue(mode, 'plan');
 	await expect(mode).toBeEnabled();
-	await mode.selectOption('yolo');
+	await choose(mode, 'yolo');
 	await expect(mode).toBeEnabled();
-	await expect(mode).toHaveValue('plan');
+	await expectValue(mode, 'plan');
 	await expect(input).toHaveValue('fixture plan after cancelled yolo');
 	const before = await page.evaluate(async () => {
 		const {desktop} = window as unknown as {desktop: DesktopApi};
@@ -317,7 +320,7 @@ test('cancelling yolo preserves an earlier pending plan and its draft through fi
 	).toBe(true);
 	await input.press('Enter');
 	await expect(input).toHaveValue('');
-	await expect(mode).toHaveValue('plan');
+	await expectValue(mode, 'plan');
 });
 
 test('inactive composer controls and reasons retain readable contrast in both themes (U.5)', async () => {
@@ -366,7 +369,7 @@ test('an unprompted current config notification updates the mounted selection an
 		name: 'model for every thread in project project',
 		exact: true,
 	});
-	await expect(model).toHaveValue('old');
+	await expectValue(model, 'old');
 	const revision = await page.evaluate(() =>
 		(window as unknown as {revisions: string[]}).revisions.at(-1),
 	);
@@ -387,7 +390,7 @@ test('an unprompted current config notification updates the mounted selection an
 		path.join(work, 'project', '.fake-control-notification'),
 		'fixture',
 	);
-	await expect(model).toHaveValue('confirmed');
+	await expectValue(model, 'confirmed');
 	expect(
 		await page.evaluate(() =>
 			(window as unknown as {revisions: string[]}).revisions.at(-1),

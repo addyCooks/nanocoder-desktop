@@ -155,7 +155,7 @@ function AgentLabel({at}: {at?: number}) {
 	return (
 		<li className="gate-message-label">
 			<div className="stream-author stream-author-agent">
-				<span aria-hidden="true">✱ </span>Nanocoder
+				Nanocoder
 				{at !== undefined && (
 					<>
 						{' '}

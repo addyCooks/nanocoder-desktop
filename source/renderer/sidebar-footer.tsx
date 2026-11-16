@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {Icon} from '@/renderer/icons';
 import type {AcpBadge} from '@/renderer/supervisor-state';
 import {Button} from '@/renderer/ui';
 
@@ -62,7 +63,18 @@ export function SidebarFooter({
 						title="runtime details"
 						onClick={event => onOpenRuntime?.(event.currentTarget)}
 					>
-						ⓘ
+						<Icon name="info" />
+					</Button>
+				)}
+				{onOpenShortcuts && (
+					<Button
+						className="footer-icon-button"
+						aria-label="keyboard shortcuts"
+						aria-haspopup="dialog"
+						title="keyboard shortcuts"
+						onClick={event => onOpenShortcuts?.(event.currentTarget)}
+					>
+						<Icon name="keyboard" />
 					</Button>
 				)}
 			</div>
@@ -83,19 +95,6 @@ export function SidebarFooter({
 				</span>
 				<span>desktop {desktopVersion}</span>
 			</p>
-			{onOpenShortcuts && (
-				<div className="footer-actions">
-					<Button
-						className="footer-icon-button"
-						aria-label="keyboard shortcuts"
-						aria-haspopup="dialog"
-						title="keyboard shortcuts"
-						onClick={event => onOpenShortcuts?.(event.currentTarget)}
-					>
-						?
-					</Button>
-				</div>
-			)}
 		</div>
 	);
 }

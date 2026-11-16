@@ -292,7 +292,6 @@ test('shell geometry and pinned composer follow all three widths without an empt
 							'.shell-header-actions > button:last-child kbd',
 						).width,
 						paletteChrome: chrome('.shell-header-actions > button:last-child'),
-						mac: navigator.platform.startsWith('Mac'),
 						reading: measure('.technical-gate'),
 						scrollPadding: padding('.shell-stream-scroll'),
 						footerPadding: padding('.shell-conversation-footer'),
@@ -305,32 +304,21 @@ test('shell geometry and pinned composer follow all three widths without an empt
 						overflows: document.documentElement.scrollWidth > innerWidth,
 					};
 				});
-				const railWidth = width <= 840 ? 188 : width <= 1050 ? 204 : 222;
+				const railWidth = width <= 840 ? 212 : width <= 1050 ? 232 : 260;
 				expect(geometry.rail.width).toBe(railWidth);
 				expect(geometry.stream.x).toBe(railWidth);
 				expect(geometry.stream.width).toBe(width - railWidth);
 				expect(geometry.composer.bottom).toBe(
 					width <= 840 ? 883 : width <= 1050 ? 882 : 880,
 				);
-				// Reference header 66px (62px at 840). At 840 the breadcrumb sits 0.8px lower than the reference's 1.11.
-				const crumbTop = width <= 840 ? 1.9 : 3.11;
-				expect(geometry.header.height).toBe(width <= 840 ? 62 : 66);
-				expect(geometry.breadcrumb.y).toBeCloseTo(crumbTop, 1);
-				expect(geometry.title.y).toBeCloseTo(crumbTop + 19, 1);
-				// macOS shows ⌘K, which sets the reference width. Other platforms
-				// show Ctrl+K, so their width is the button's own chrome plus the
-				// hint it actually renders.
-				const expectedPalette = geometry.mac
-					? width <= 1050
-						? 40
-						: 46
-					: geometry.paletteChrome + geometry.paletteHint;
-				expect(geometry.palette.width).toBeCloseTo(expectedPalette, 0);
+				expect(geometry.header.height).toBe(52);
+				expect(geometry.breadcrumb.y).toBeCloseTo(15.5, 1);
+				expect(geometry.title.y).toBeCloseTo(13.5, 1);
 				expect(geometry.palette.width).toBeCloseTo(
 					geometry.paletteChrome + geometry.paletteHint,
 					0,
 				);
-				if (width >= 1020) expect(geometry.reading.width).toBeCloseTo(740, 0);
+				if (width >= 1050) expect(geometry.reading.width).toBeCloseTo(740, 0);
 				else expect(geometry.reading.width).toBeLessThanOrEqual(740);
 				if (geometry.tools === 0)
 					expect(geometry.readingOffset).toBeCloseTo(
@@ -361,8 +349,8 @@ test('the compact shell exposes real controls and omits unused later surfaces', 
 	await page.setViewportSize({width: 1240, height: 900});
 	await expect(page.getByRole('banner')).not.toContainText('not built yet');
 	const crumb = page.locator('.shell-breadcrumb');
-	await expect(crumb).toHaveCSS('line-height', '16px');
-	expect((await crumb.boundingBox())?.height).toBeCloseTo(16, 0);
+	await expect(crumb).toHaveCSS('line-height', '20px');
+	expect((await crumb.boundingBox())?.height).toBeCloseTo(20, 0);
 	await expect(
 		page.getByRole('banner').getByRole('button', {name: 'command palette'}),
 	).toBeVisible();
@@ -416,7 +404,7 @@ test('keyboard controls remain reachable and visibly focused inside the stream i
 			const rows = projects
 				.getByRole('region', {name: 'recent projects'})
 				.getByRole('listitem');
-			expect(await rows.count()).toBeGreaterThan(0);
+			await expect(rows.first()).toBeVisible();
 			const dialogOrder = [
 				projects.getByRole('button', {name: 'dismiss dialog', exact: true}),
 				...(await rows.all()).map(row => row.locator('button')),
@@ -440,6 +428,10 @@ test('keyboard controls remain reachable and visibly focused inside the stream i
 			await expect(
 				rail.locator('.sidebar-link', {hasText: 'import sessions'}),
 			).toBeVisible();
+			const mode = page.getByRole('combobox', {
+				name: 'mode for this thread',
+				exact: true,
+			});
 			const focusOrder = [
 				switcher,
 				rail.getByRole('button', {name: 'new thread', exact: true}),
@@ -455,7 +447,11 @@ test('keyboard controls remain reachable and visibly focused inside the stream i
 				palette,
 				stream,
 				input,
-				page.getByRole('combobox', {name: 'mode for this thread', exact: true}),
+				mode,
+				page.getByRole('button', {
+					name: 'mode and project default details',
+					exact: true,
+				}),
 				send,
 			];
 			await expect(stream).toHaveAccessibleName('conversation');
@@ -463,7 +459,11 @@ test('keyboard controls remain reachable and visibly focused inside the stream i
 			for (const [index, control] of focusOrder.entries()) {
 				if (index > 0) await page.keyboard.press('Tab');
 				await expect(control).toBeFocused();
-				await expect(control).toHaveCSS('outline-width', '2px');
+				if (control === input) {
+					await expect(input).toHaveCSS('outline-style', 'none');
+				} else {
+					await expect(control).toHaveCSS('outline-width', '2px');
+				}
 				if (control === input) {
 					await expect(page.locator('.gate-composer')).toHaveCSS(
 						'border-color',
@@ -555,11 +555,11 @@ test('the mounted workbench takes the narrow canvas and returns to the same chat
 				await expect(draft).toHaveValue(typedDraft);
 				if (width <= 840) {
 					await expect(chat).toBeHidden();
-					const railWidth = 188;
+					const railWidth = 212;
 					expect((await panel.boundingBox())?.width).toBe(width - railWidth);
 				} else await expect(chat).toBeVisible();
 				const close = panel.getByRole('button', {
-					name: width <= 840 ? '← back to chat' : 'close panel',
+					name: width <= 840 ? 'back to chat' : 'close panel',
 					exact: true,
 				});
 				await close.focus();

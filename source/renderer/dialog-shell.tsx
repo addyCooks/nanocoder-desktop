@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {Icon} from '@/renderer/icons';
 
 export interface DialogShellProps {
 	title: string;
@@ -27,7 +28,7 @@ export function DialogShell({
 					aria-label={closeLabel}
 					onClick={onClose}
 				>
-					<span aria-hidden="true">×</span>
+					<Icon name="close" />
 				</button>
 			</div>
 			<div className="dialog-body">{children}</div>

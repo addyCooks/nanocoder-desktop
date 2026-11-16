@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {Icon} from '@/renderer/icons';
 import type {TerminalAction} from '@/renderer/terminal-controller';
 import {terminalFocusLease} from '@/renderer/terminal-focus';
 import {type TerminalHandle, TerminalView} from '@/renderer/terminal-view';
@@ -72,7 +73,7 @@ export function TerminalPanel({
 					aria-label="focus your terminal"
 					onClick={() => view.current?.focus()}
 				>
-					<span aria-hidden="true">$_</span> terminal
+					terminal
 				</Button>
 				<span className="terminal-state" role="status">
 					{running ? '●' : status === 'failed' ? '✕' : '○'} {status}
@@ -132,8 +133,12 @@ export function TerminalPanel({
 					>
 						stop
 					</Button>
-					<Button aria-label="close terminal panel" onClick={onClose}>
-						×
+					<Button
+						className="close-button"
+						aria-label="close terminal panel"
+						onClick={onClose}
+					>
+						<Icon name="close" size={16} />
 					</Button>
 				</div>
 			</header>

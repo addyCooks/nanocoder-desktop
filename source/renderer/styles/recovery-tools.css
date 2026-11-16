@@ -12,7 +12,7 @@
 .ui-card.nc-recovery {
 	padding: 16px 18px;
 	gap: 10px;
-	font-size: 11px;
+	font-size: 13px;
 	line-height: 1.8;
 }
 .ui-card.nc-failure-notice {
@@ -43,5 +43,5 @@
 }
 .nc-recovery--ready .ui-button {
 	min-height: 28px;
-	font-size: 10px;
+	font-size: 13px;
 }

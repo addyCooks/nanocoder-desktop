@@ -797,5 +797,5 @@ test('runtime details reviews diagnostics with computed presentation in both the
 	);
 	await expect(
 		diagnostics.getByRole('region', {name: 'captured diagnostics'}),
-	).toHaveCSS('font-size', '11px');
+	).toHaveCSS('font-size', '13px');
 });

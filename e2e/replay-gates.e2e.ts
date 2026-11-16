@@ -11,6 +11,7 @@ import path from 'node:path';
 import {expect, test} from '@playwright/test';
 import type {DesktopApi} from '@/shared/desktop-api';
 import type {IpcResult, SupervisorState, ThreadReplay} from '@/shared/ipc';
+import {choose, expectValue} from './qa/dropdown';
 import {electron} from './qa/electron';
 import {qaEnvironment} from './qa/environment';
 import {turnEnded} from './qa/turn-state';
@@ -142,11 +143,11 @@ for (const outcome of ['complete', 'fail', 'missing'] as const) {
 						const send = document.querySelector<HTMLButtonElement>(
 							'button[aria-label="send"]',
 						);
-						const mode = document.querySelector<HTMLSelectElement>(
-							'select[aria-label="mode for this thread"]',
+						const mode = document.querySelector<HTMLButtonElement>(
+							'[role="combobox"][aria-label="mode for this thread"]',
 						);
-						const model = document.querySelector<HTMLSelectElement>(
-							'select[aria-label^="model for every thread"]',
+						const model = document.querySelector<HTMLButtonElement>(
+							'[role="combobox"][aria-label^="model for every thread"]',
 						);
 						if (users === 100 && agents === 100) {
 							state.probe.prefix ??= performance.now();
@@ -189,7 +190,9 @@ for (const outcome of ['complete', 'fail', 'missing'] as const) {
 			await expect(send).toBeDisabled();
 			await expect(mode).toBeDisabled();
 			await expect(
-				page.locator('select[aria-label^="model for every thread"]:enabled'),
+				page.locator(
+					'[role="combobox"][aria-label^="model for every thread"]:enabled',
+				),
 			).toHaveCount(0);
 			const refusals = await page.evaluate(async scope => {
 				const {desktop} = window as unknown as GateWindow;
@@ -271,7 +274,9 @@ for (const outcome of ['complete', 'fail', 'missing'] as const) {
 					await expect(mode).toBeDisabled();
 				}
 				await expect(
-					page.locator('select[aria-label^="model for every thread"]:enabled'),
+					page.locator(
+						'[role="combobox"][aria-label^="model for every thread"]:enabled',
+					),
 				).toHaveCount(0);
 				const phases = await page.evaluate(
 					() => (window as unknown as GateWindow).probe.events,
@@ -405,10 +410,10 @@ for (const outcome of ['complete', 'fail', 'missing'] as const) {
 			])
 				expect(response).toBeLessThanOrEqual(100);
 			await test.step('apply an actual post-replay mode and model', async () => {
-				await mode.selectOption('plan');
-				await expect(mode).toHaveValue('plan');
-				await model.selectOption('confirmed');
-				await expect(model).toHaveValue('confirmed');
+				await choose(mode, 'plan');
+				await expectValue(mode, 'plan');
+				await choose(model, 'confirmed');
+				await expectValue(model, 'confirmed');
 			});
 			await test.step('send the retained draft only after explicit click', async () => {
 				await send.click();

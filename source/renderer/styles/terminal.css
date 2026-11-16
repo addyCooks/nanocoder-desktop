@@ -1,9 +1,9 @@
 .terminal-panel {
 	display: flex;
 	flex-direction: column;
-	height: var(--spacing-bottom-panel-height);
-	max-height: 55dvh;
-	min-height: 240px;
+	height: var(--shell-bottom-height, var(--spacing-bottom-panel-height));
+	max-height: 80dvh;
+	min-height: 160px;
 	border-top: 1px solid var(--colors-stroke);
 	background: var(--colors-surface-panel);
 	color: var(--colors-on-surface);

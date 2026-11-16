@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {Icon} from '@/renderer/icons';
 import {recencyLabel} from '@/renderer/recency';
 import {Button} from '@/renderer/ui';
 import type {DiscoveredSession} from '@/shared/ipc';
@@ -131,11 +132,11 @@ export function SessionImportList(
 						void props.onRefresh();
 					}}
 				>
-					<span aria-hidden="true">↻ </span>refresh offers
+					refresh offers
 				</Button>
 				{props.onBack && (
 					<Button className="session-import-back" onClick={props.onBack}>
-						<span aria-hidden="true">← </span>
+						<Icon name="back" />
 						{props.backLabel ?? 'back to selected thread'}
 					</Button>
 				)}

@@ -14,15 +14,15 @@
 .stream-day-label {
 	margin: 0 0 12px;
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
-	line-height: 16px;
+	font-size: 13px;
+	line-height: 20px;
 	text-align: center;
 }
 
 .stream-author {
 	margin-bottom: 9px;
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 	line-height: 1.75;
 	letter-spacing: 0;
 	text-transform: none;
@@ -49,7 +49,7 @@
 
 .stream-reasoning {
 	color: var(--components-reasoning-text-color);
-	font-size: 11px;
+	font-size: 13px;
 	line-height: var(--components-reasoning-line-height);
 	font-style: normal;
 	font-synthesis: style;
@@ -64,7 +64,7 @@
 
 .stream-reasoning > p {
 	padding: 7px 0 0 18px;
-	font-size: 11px;
+	font-size: 13px;
 }
 
 .gate-message-tool,
@@ -176,7 +176,7 @@ details[open] > summary .stream-disclosure::before {
 
 .stream-markdown :is(h1, h2, h3, h4, h5, h6) {
 	color: var(--colors-on-surface);
-	font-size: 16px;
+	font-size: 18px;
 	font-weight: var(--typography-body-md-font-weight);
 	line-height: 1.35;
 	margin-block: 10px 12px;
@@ -274,11 +274,11 @@ details[open] > summary .stream-disclosure::before {
 	border: 0;
 	border-radius: 12px 12px 3px 12px;
 	background: var(--colors-surface-panel);
-	font-size: 13px;
+	font-size: 15px;
 	line-height: 1.75;
 }
 .gate-message-agent {
-	font-size: 13px;
+	font-size: 15px;
 	line-height: 1.8;
 }
 .stream-reasoning {
@@ -317,7 +317,7 @@ details[open] > summary .stream-disclosure::before {
 	padding-top: 0;
 }
 .gate-message-tool .stream-disclosure::before {
-	font-size: 10px;
+	font-size: 13px;
 }
 .gate-message-failure {
 	border-left: 3px solid var(--colors-error);
@@ -328,7 +328,7 @@ details[open] > summary .stream-disclosure::before {
 .stream-turn-note {
 	margin: 0;
 	color: var(--colors-on-surface-muted);
-	font-size: 10px;
+	font-size: 13px;
 }
 @media (max-width: 840px) {
 	.gate-transcript > .gate-message-user {

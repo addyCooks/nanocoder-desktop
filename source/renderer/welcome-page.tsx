@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {Icon} from '@/renderer/icons';
 import {dayAge, shortRoot} from '@/renderer/recency';
 import {Button, Divider} from '@/renderer/ui';
 import type {IpcResult, NanocoderRuntime, ProjectInfo} from '@/shared/ipc';
@@ -44,7 +45,7 @@ export function WelcomePage({
 			</p>
 			{runtime?.ok && (
 				<Button className="welcome-open" onClick={onConnect} disabled={busy}>
-					<span aria-hidden="true">⌑ </span>
+					<Icon name="folder" />
 					{connecting ? 'starting Nanocoder' : 'open a project folder'}
 				</Button>
 			)}
@@ -101,7 +102,7 @@ export function WelcomePage({
 			<div className="welcome-runtime">
 				<Divider />
 				<Button className="welcome-runtime-toggle" onClick={onRuntime}>
-					<span aria-hidden="true">▸ </span>runtime and setup details
+					runtime and setup details
 				</Button>
 			</div>
 		</section>
