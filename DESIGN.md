@@ -21,14 +21,14 @@ colors:
   diff-add: "#202020"
   diff-del: "#242424"
   primary-light: "#0000ee"
-  primary-soft-light: "#dce6fa"
-  surface-light: "#f5f6fb"
-  surface-panel-light: "#ebedf5"
-  surface-elevated-light: "#e0e4f0"
-  on-surface-light: "#24283b"
-  on-surface-muted-light: "#4f5678"
-  stroke-light: "#24283b26"
-  stroke-soft-light: "#24283b14"
+  primary-soft-light: "#e6e9fd"
+  surface-light: "#ffffff"
+  surface-panel-light: "#fafafa"
+  surface-elevated-light: "#f0f0f0"
+  on-surface-light: "#0a0a0a"
+  on-surface-muted-light: "#525252"
+  stroke-light: "#0a0a0a1f"
+  stroke-soft-light: "#0a0a0a0f"
   success-light: "#28633d"
   error-light: "#a1284c"
   warning-light: "#76510b"
@@ -326,18 +326,18 @@ Navigation is compact, reading is comfortable, and secondary work surfaces open 
 
 ## Colors
 
-Dark surfaces, ink and strokes are neutral black and grey, with equal RGB channels. The refined light palette is a full counterpart. Blue is the single interactive accent, not a decorative second status colour.
+Dark surfaces, ink and strokes are neutral black and grey, with equal RGB channels. The light palette is white with near-black ink and neutral greys. Blue is the single interactive accent, not a decorative second status colour.
 
 | Role | Dark | Light | Used for |
 |---|---|---|---|
-| `surface` | `#161616` | `#f5f6fb` | Window and conversation. |
-| `surface-panel` | `#1d1d1d` | `#ebedf5` | Sidebar, composer, cards and workbench. |
-| `surface-elevated` | `#262626` | `#e0e4f0` | Dialogs, menus and raised controls. |
-| `on-surface` | `#e6e6e6` | `#24283b` | Primary text. |
-| `on-surface-muted` | `#a8a8a8` | `#4f5678` | Secondary text and labels. |
-| `stroke` / `stroke-soft` | `#e6e6e626` / `#e6e6e614` | `#24283b26` / `#24283b14` | Hairline edges and row dividers. |
+| `surface` | `#161616` | `#ffffff` | Window and conversation. |
+| `surface-panel` | `#1d1d1d` | `#fafafa` | Sidebar, composer, cards and workbench. |
+| `surface-elevated` | `#262626` | `#f0f0f0` | Dialogs, menus and raised controls. |
+| `on-surface` | `#e6e6e6` | `#0a0a0a` | Primary text. |
+| `on-surface-muted` | `#a8a8a8` | `#525252` | Secondary text and labels. |
+| `stroke` / `stroke-soft` | `#e6e6e626` / `#e6e6e614` | `#0a0a0a1f` / `#0a0a0a0f` | Hairline edges and row dividers. |
 | `primary` | `#7aa2f7` | `#0000ee` | Selection, focus, mode, links, ready send and the running dot. |
-| `primary-soft` | `#202a3b` | `#dce6fa` | Selected rows. |
+| `primary-soft` | `#202a3b` | `#e6e9fd` | Selected rows. |
 | `success` | `#9ece6a` | `#28633d` | Reported success, ready markers and allow borders. |
 | `error` | `#f7768e` | `#a1284c` | Failure, stop and reject borders. |
 | `warning` | `#e0af68` | `#76510b` | Approval markers and borders. |

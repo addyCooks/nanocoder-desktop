@@ -15,6 +15,7 @@ import {BackgroundProjects} from '@/renderer/background-projects';
 import {BrowserPanel} from '@/renderer/browser-panel';
 import {Composer} from '@/renderer/composer';
 import {ConversationStream} from '@/renderer/conversation-stream';
+import {Icon} from '@/renderer/icons';
 import {
 	commandModifier,
 	notifyImported,
@@ -25,6 +26,7 @@ import {
 	type OverlayHandle,
 	OverlayProvider,
 	PaletteButton,
+	ThemeButton,
 } from '@/renderer/overlays';
 import {backgroundItems} from '@/renderer/project-activity';
 import {controlsForThread} from '@/renderer/project-controls';
@@ -808,7 +810,8 @@ export function App() {
 											)
 								}
 							>
-								▤ files
+								<Icon name="files" size={16} />
+								files
 							</Button>
 						)}
 						{projectId && (
@@ -833,6 +836,7 @@ export function App() {
 								terminal
 							</Button>
 						)}
+						<ThemeButton />
 						<PaletteButton />
 					</>
 				}

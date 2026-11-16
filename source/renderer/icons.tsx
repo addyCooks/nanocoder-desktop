@@ -9,11 +9,14 @@ import {
 	Ellipsis,
 	FileText,
 	Folder,
+	FolderTree,
 	Import,
 	Info,
 	Keyboard,
+	Moon,
 	Plus,
 	RotateCw,
+	Sun,
 	X,
 } from 'lucide-react';
 import * as React from 'react';
@@ -26,14 +29,17 @@ export const icons = {
 	expand: ChevronRight,
 	file: FileText,
 	folder: Folder,
+	files: FolderTree,
 	forward: ArrowRight,
 	import: Import,
 	info: Info,
 	keyboard: Keyboard,
+	moon: Moon,
 	more: Ellipsis,
 	plus: Plus,
 	reload: RotateCw,
 	send: ArrowUp,
+	sun: Sun,
 } satisfies Record<string, LucideIcon>;
 
 export function Icon({

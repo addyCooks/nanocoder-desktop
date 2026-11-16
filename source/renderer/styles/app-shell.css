@@ -111,6 +111,10 @@
 	cursor: pointer;
 }
 
+.shell-menu-button:hover {
+	color: var(--colors-on-surface);
+}
+
 .shell-header-actions {
 	display: flex;
 	flex: none;
@@ -133,6 +137,12 @@
 .shell-header-actions > .ui-button[aria-expanded="true"] {
 	background: var(--colors-surface-elevated);
 	color: var(--colors-on-surface);
+}
+
+.shell-header-actions > .theme-toggle {
+	justify-content: center;
+	width: 36px;
+	padding: 0;
 }
 
 .shell-header-actions kbd {
@@ -271,6 +281,15 @@
 	}
 	.shell-title-bar {
 		padding-inline: 16px;
+	}
+	.shell-header-actions {
+		gap: 0;
+	}
+	.shell-header-actions > .ui-button {
+		padding-inline: 5px;
+	}
+	.shell-header-actions > .theme-toggle {
+		width: 30px;
 	}
 	/* the reference reading column is inset 27px, the composer 24px */
 	.shell-stream-scroll {

@@ -54,6 +54,12 @@
 	color: var(--colors-surface);
 	font-size: 14px;
 }
+.welcome-open:hover:not(:disabled),
+.thread-recovery-primary:hover:not(:disabled) {
+	border-color: color-mix(in srgb, var(--colors-on-surface) 82%, transparent);
+	background: color-mix(in srgb, var(--colors-on-surface) 82%, transparent);
+	color: var(--colors-surface);
+}
 .welcome-open > span {
 	white-space: pre;
 }
@@ -96,6 +102,10 @@
 	line-height: 1.6;
 	text-align: left;
 	white-space: nowrap;
+}
+.welcome-recent:hover:not(:disabled) {
+	border-color: transparent;
+	background: var(--colors-surface-panel);
 }
 .welcome-recent-glyph,
 .welcome-recent-end {
@@ -148,6 +158,11 @@
 	color: var(--colors-on-surface-muted);
 	font-size: 14px;
 	text-align: left;
+}
+.welcome-runtime-toggle:hover:not(:disabled) {
+	border-color: transparent;
+	background: transparent;
+	color: var(--colors-on-surface);
 }
 .workspace-setup-warning {
 	margin-bottom: 8px;
@@ -232,6 +247,7 @@
 }
 .session-import-back:hover:not(:disabled) {
 	border-color: transparent;
+	background: transparent;
 	color: var(--colors-on-surface);
 }
 .session-import-intro {

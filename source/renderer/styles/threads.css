@@ -319,6 +319,11 @@
 	line-height: 20px;
 }
 
+.footer-icon-button:hover:not(:disabled) {
+	border-color: transparent;
+	color: var(--colors-on-surface);
+}
+
 .footer-versions {
 	margin: 0;
 	padding: 0 8px 4px;

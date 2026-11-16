@@ -687,7 +687,7 @@ test('opening a recent project exposes only its own thread and restores each pro
 	await page.emulateMedia({reducedMotion: 'reduce'});
 	for (const [theme, color] of [
 		['dark', 'rgb(230, 230, 230)'],
-		['light', 'rgb(36, 40, 59)'],
+		['light', 'rgb(10, 10, 10)'],
 	]) {
 		await page.evaluate(theme => {
 			document.documentElement.dataset.theme = theme;

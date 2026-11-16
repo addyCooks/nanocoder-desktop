@@ -178,6 +178,11 @@
 	background: transparent;
 }
 
+.dialog-foot .ui-button.dialog-quiet:hover:not(:disabled) {
+	border-color: transparent;
+	background: var(--colors-surface-elevated);
+}
+
 /* Approved shell heights at 1240px; the body takes the spare height so the footer stays at the foot. */
 .dialog-shell--rename {
 	min-height: 253px;
@@ -408,7 +413,6 @@
 	transition:
 		opacity 180ms,
 		transform 180ms;
-	box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
 }
 
 @starting-style {

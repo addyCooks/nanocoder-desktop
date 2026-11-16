@@ -132,7 +132,6 @@
 	border-radius: 15px;
 	background: var(--colors-surface-elevated);
 	color: var(--colors-on-surface);
-	box-shadow: 0 18px 48px rgb(0 0 0 / 35%);
 	font-size: 14px;
 	line-height: 1.6;
 }
@@ -166,6 +165,10 @@
 	color: var(--colors-on-surface);
 	font-size: 14px;
 	line-height: 1.6;
+}
+
+.question-dialog .question-dialog-close:hover:not(:disabled) {
+	border-color: transparent;
 }
 
 .question-dialog-body {

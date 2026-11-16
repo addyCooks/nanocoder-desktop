@@ -18,14 +18,14 @@
 	--colors-diff-add: #202020;
 	--colors-diff-del: #242424;
 	--colors-primary-light: #0000ee;
-	--colors-primary-soft-light: #dce6fa;
-	--colors-surface-light: #f5f6fb;
-	--colors-surface-panel-light: #ebedf5;
-	--colors-surface-elevated-light: #e0e4f0;
-	--colors-on-surface-light: #24283b;
-	--colors-on-surface-muted-light: #4f5678;
-	--colors-stroke-light: #24283b26;
-	--colors-stroke-soft-light: #24283b14;
+	--colors-primary-soft-light: #e6e9fd;
+	--colors-surface-light: #ffffff;
+	--colors-surface-panel-light: #fafafa;
+	--colors-surface-elevated-light: #f0f0f0;
+	--colors-on-surface-light: #0a0a0a;
+	--colors-on-surface-muted-light: #525252;
+	--colors-stroke-light: #0a0a0a1f;
+	--colors-stroke-soft-light: #0a0a0a0f;
 	--colors-success-light: #28633d;
 	--colors-error-light: #a1284c;
 	--colors-warning-light: #76510b;
@@ -386,14 +386,14 @@
 
 :root[data-theme="light"] {
 	--colors-primary: #0000ee;
-	--colors-primary-soft: #dce6fa;
-	--colors-surface: #f5f6fb;
-	--colors-surface-panel: #ebedf5;
-	--colors-surface-elevated: #e0e4f0;
-	--colors-on-surface: #24283b;
-	--colors-on-surface-muted: #4f5678;
-	--colors-stroke: #24283b26;
-	--colors-stroke-soft: #24283b14;
+	--colors-primary-soft: #e6e9fd;
+	--colors-surface: #ffffff;
+	--colors-surface-panel: #fafafa;
+	--colors-surface-elevated: #f0f0f0;
+	--colors-on-surface: #0a0a0a;
+	--colors-on-surface-muted: #525252;
+	--colors-stroke: #0a0a0a1f;
+	--colors-stroke-soft: #0a0a0a0f;
 	--colors-success: #28633d;
 	--colors-error: #a1284c;
 	--colors-warning: #76510b;

@@ -444,6 +444,7 @@ test('keyboard controls remain reachable and visibly focused inside the stream i
 				page.getByRole('button', {name: 'open project files', exact: true}),
 				page.getByRole('button', {name: 'open browser', exact: true}),
 				page.getByRole('button', {name: 'open terminal', exact: true}),
+				page.getByRole('button', {name: /^switch to (light|dark) theme$/}),
 				palette,
 				stream,
 				input,

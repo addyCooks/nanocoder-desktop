@@ -12,6 +12,7 @@ import {
 	useState,
 } from 'react';
 import {DialogShell} from '@/renderer/dialog-shell';
+import {Icon} from '@/renderer/icons';
 import {
 	commandModifier,
 	type DialogApi,
@@ -41,7 +42,25 @@ export interface OverlayHandle {
 const OverlayContext = createContext<{
 	open(request: OverlayRequest): void;
 	shortcut: string;
+	theme: 'dark' | 'light';
+	toggleTheme(): void;
 } | null>(null);
+
+export function ThemeButton() {
+	const overlays = useContext(OverlayContext);
+	if (!overlays) return null;
+	const next = overlays.theme === 'dark' ? 'light' : 'dark';
+	return (
+		<Button
+			className="theme-toggle"
+			aria-label={`switch to ${next} theme`}
+			title={`switch to ${next} theme`}
+			onClick={overlays.toggleTheme}
+		>
+			<Icon name={next === 'light' ? 'sun' : 'moon'} size={16} />
+		</Button>
+	);
+}
 
 export function PaletteButton() {
 	const overlays = useContext(OverlayContext);
@@ -239,7 +258,16 @@ export function OverlayProvider({
 	);
 
 	const api = useMemo<DialogApi>(() => ({open, close}), [open, close]);
-	const context = useMemo(() => ({open, shortcut}), [open, shortcut]);
+	const toggleTheme = useRef(() => {});
+	const context = useMemo(
+		() => ({
+			open,
+			shortcut,
+			theme: activeTheme,
+			toggleTheme: () => toggleTheme.current(),
+		}),
+		[open, shortcut, activeTheme],
+	);
 	useImperativeHandle(ref, () => ({open, close, closeIf, notify}), [
 		open,
 		close,
@@ -318,11 +346,15 @@ export function OverlayProvider({
 		const result = await window.desktop.updateSettings({patch: {theme}});
 		if (!result.ok) {
 			setThemeError('theme could not be saved. try again.');
+			notifications.current?.push('theme could not be saved. try again.');
 			return;
 		}
 		document.documentElement.dataset.theme = theme;
 		setActiveTheme(theme);
 		notifications.current?.push(`switched to ${theme} theme`);
+	};
+	toggleTheme.current = () => {
+		void changeTheme(activeTheme === 'dark' ? 'light' : 'dark');
 	};
 	const commands: PaletteAction[] = [
 		...actions,

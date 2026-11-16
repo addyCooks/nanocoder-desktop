@@ -17,6 +17,11 @@
 	font-size: 13px;
 }
 
+.composer-control-rail > .ui-button:not(.composer-send):hover:not(:disabled) {
+	border-color: transparent;
+	background: var(--colors-stroke);
+}
+
 .composer-hint-row .gate-hint {
 	flex: 1 1 auto;
 	margin: 0;

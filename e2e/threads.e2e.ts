@@ -146,7 +146,7 @@ test('long thread titles stay inside the rail with visible glyphs, selection rul
 			await expect(selected).toHaveCSS('border-left-color', 'rgba(0, 0, 0, 0)');
 			await expect(selected).toHaveCSS(
 				'background-color',
-				theme === 'dark' ? 'rgb(32, 42, 59)' : 'rgb(220, 230, 250)',
+				theme === 'dark' ? 'rgb(32, 42, 59)' : 'rgb(230, 233, 253)',
 			);
 		}
 	}
@@ -216,7 +216,7 @@ for (const [state, label] of [
 			}, theme);
 			await expect(selected).toHaveCSS(
 				'background-color',
-				theme === 'dark' ? 'rgb(32, 42, 59)' : 'rgb(220, 230, 250)',
+				theme === 'dark' ? 'rgb(32, 42, 59)' : 'rgb(230, 233, 253)',
 			);
 			await expect(selected).toHaveCSS('border-left-color', 'rgba(0, 0, 0, 0)');
 		}

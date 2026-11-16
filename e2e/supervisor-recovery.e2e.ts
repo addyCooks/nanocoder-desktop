@@ -222,7 +222,7 @@ for (const theme of ['dark', 'light'] as const) {
 				await expect(dashed).toHaveCSS('border-top-style', 'dashed');
 				await expect(dashed).toHaveCSS(
 					'color',
-					theme === 'dark' ? 'rgb(168, 168, 168)' : 'rgb(79, 86, 120)',
+					theme === 'dark' ? 'rgb(168, 168, 168)' : 'rgb(82, 82, 82)',
 				);
 				await expect(dashed).toContainText(
 					"Nanocoder no longer has this chat's history. By default it deletes chats not opened for 30 days, and the oldest once there are more than 100. You can change this in Nanocoder's session settings.",
