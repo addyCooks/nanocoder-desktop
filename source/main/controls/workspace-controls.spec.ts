@@ -50,7 +50,7 @@ async function fixture(t: ExecutionContext, scenario?: string) {
 			return {
 				ok: true,
 				runtime: {
-					nodePath: process.execPath,
+					nodePath: realpathSync.native(process.execPath),
 					cliPath: path.join(
 						import.meta.dirname,
 						'../nanocoder/fixtures/fake-control-nanocoder.mjs',

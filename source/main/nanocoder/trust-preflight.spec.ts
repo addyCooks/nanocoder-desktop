@@ -85,7 +85,11 @@ function fixture(
 			return child;
 		},
 	});
-	const runtime = {nodePath: process.execPath, cliPath: cli, version: '1.31.0'};
+	const runtime = {
+		nodePath: realpathSync.native(process.execPath),
+		cliPath: cli,
+		version: '1.31.0',
+	};
 	return {
 		work,
 		project,
