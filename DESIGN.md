@@ -384,7 +384,7 @@ A compact full-height sidebar beside the conversation canvas. The title bar belo
 - Workbench: an optional right slot for later files/review/browser tools. It is absent when unused. At 840px and below an open workbench owns the conversation canvas and has an explicit back-to-chat action, while project navigation remains reachable.
 - Bottom area: optional terminal slot, absent when unused. No Milestone 2 or 3 controls ship as part of this overhaul.
 
-Reference sidebar widths are 222px at 1240, 204px at 1020 and 188px at 840. Reading-region horizontal padding is 40px, 30px and 24px. Do not squeeze three reading surfaces together at narrow widths.
+Reference sidebar widths are 222px at 1240, 204px at 1020 and 188px at 840. Reading-region horizontal padding is 40px, 30px and 24px. Do not squeeze three reading surfaces together at narrow widths. The window cannot be made narrower than 640px, because below about 560px the header actions leave it. A long project name is cut with an ellipsis in the header.
 
 Browser placement in the right workbench is the approved visual direction only. Browser capabilities and any upstream whitepaper placement change remain with Milestone 3; this change builds no browser.
 
