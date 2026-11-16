@@ -2,20 +2,24 @@ import {readdirSync, readFileSync} from 'node:fs';
 import path from 'node:path';
 import test from 'ava';
 import {E2E_HIDDEN_SWITCH} from '@/main/window-presentation';
-import {e2eArguments} from './launch-options';
+import {e2eArguments, FIXED_SCALE_SWITCH} from './launch-options';
 
-test('routine e2e arguments always request hidden windows without mutating inputs', t => {
+test('routine e2e arguments always request hidden windows at a display scale of 1 without mutating inputs', t => {
 	const args = ['.', '--user-data-dir=/temporary/profile'];
-	t.deepEqual(e2eArguments(args, undefined), [...args, E2E_HIDDEN_SWITCH]);
+	const routine = [...args, FIXED_SCALE_SWITCH, E2E_HIDDEN_SWITCH];
+	t.deepEqual(e2eArguments(args, undefined), routine);
 	t.deepEqual(args, ['.', '--user-data-dir=/temporary/profile']);
-	t.deepEqual(e2eArguments(args, '0'), [...args, E2E_HIDDEN_SWITCH]);
+	t.deepEqual(e2eArguments(args, '0'), routine);
+	t.deepEqual(e2eArguments(routine, undefined), routine);
 });
 
-test('visible windows require the exact explicit manual-QA opt-in', t => {
+test('visible windows require the exact explicit manual-QA opt-in and keep the real display scale', t => {
 	t.deepEqual(e2eArguments(['.'], '1'), ['.']);
 	t.deepEqual(e2eArguments(['.', E2E_HIDDEN_SWITCH], '1'), ['.']);
+	t.deepEqual(e2eArguments(['.', FIXED_SCALE_SWITCH], '1'), ['.']);
 	t.deepEqual(e2eArguments(['.', E2E_HIDDEN_SWITCH], '0'), [
 		'.',
+		FIXED_SCALE_SWITCH,
 		E2E_HIDDEN_SWITCH,
 	]);
 });
