@@ -3,7 +3,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 
 export const fakeRuntime = {
-	nodePath: process.execPath,
+	nodePath: realpathSync.native(process.execPath),
 	cliPath: path.join(import.meta.dirname, 'fake-nanocoder.mjs'),
 };
 
