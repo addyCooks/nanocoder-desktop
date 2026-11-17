@@ -14,6 +14,17 @@ const WINDOWS_FORBIDDEN = /[<>:"|?*\\\u0000-\u001f]/u;
 const invalid = (message = 'That path is not valid inside a project') =>
 	new IpcFailure('VALIDATION', message);
 
+// Names Windows cannot open: forbidden characters, device names, and a trailing dot or
+// space, which it drops. A folder can still hold them when they were made through a \\?\ path.
+export function windowsRefusesName(name: string): boolean {
+	return (
+		WINDOWS_FORBIDDEN.test(name) ||
+		RESERVED.test(name) ||
+		name.endsWith('.') ||
+		name.endsWith(' ')
+	);
+}
+
 // Requests carry a path relative to the project root, always written with '/'.
 // The empty string is the root itself. Nothing here touches the filesystem.
 export function relativeSegments(
@@ -33,13 +44,8 @@ export function relativeSegments(
 		if (platform !== 'win32') continue;
 		// Drive-relative, UNC and \\?\ forms, alternate data streams, reserved
 		// device names and names Windows silently rewrites.
-		if (
-			WINDOWS_FORBIDDEN.test(segment) ||
-			RESERVED.test(segment) ||
-			segment.endsWith('.') ||
-			segment.endsWith(' ')
-		)
-			throw invalid();
+		if (windowsRefusesName(segment))
+			throw invalid('Windows cannot open a file or folder with this name');
 	}
 	return segments;
 }

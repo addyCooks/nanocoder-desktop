@@ -10,6 +10,7 @@ import {
 	type ResolvedPath,
 	relativeSegments,
 	resolveInside,
+	windowsRefusesName,
 } from '@/main/files/safe-path';
 import {IpcFailure} from '@/main/ipc/handle-request';
 import {canonicalPath} from '@/main/paths';
@@ -256,7 +257,8 @@ async function classify(
 		kind: 'other',
 		link: 'none',
 		size: null,
-		unreadable: false,
+		// Opening such a name is refused, so the tree says so instead of offering it.
+		unreadable: process.platform === 'win32' && windowsRefusesName(item.name),
 		ignored: mark === 'ignored',
 		mark,
 	};

@@ -15,6 +15,7 @@ import {
 	relativeFromAbsolute,
 	relativeSegments,
 	resolveInside,
+	windowsRefusesName,
 } from '@/main/files/safe-path';
 import {displayName} from '@/shared/files';
 
@@ -97,6 +98,16 @@ test('SEC-03 Windows drive, UNC, device, stream and trailing-dot forms are refus
 			'VALIDATION',
 			bad,
 		);
+	// A name Windows cannot open says so, while traversal keeps the general wording.
+	for (const bad of ['src/CON', 'nul.txt', 'name.', 'name '])
+		t.throws(() => relativeSegments(bad, 'win32'), {
+			message: 'Windows cannot open a file or folder with this name',
+		});
+	t.throws(() => relativeSegments('a/../b', 'win32'), {
+		message: 'That path is not valid inside a project',
+	});
+	t.true(windowsRefusesName('aux.txt'));
+	t.false(windowsRefusesName('console.ts'));
 	// The same text is an ordinary name on a POSIX volume.
 	t.deepEqual(relativeSegments('a:b', 'linux'), ['a:b']);
 	t.deepEqual(relativeSegments('CON', 'linux'), ['CON']);

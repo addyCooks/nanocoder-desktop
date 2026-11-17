@@ -320,6 +320,33 @@ test('FILE-01 a file is not a folder, and a broken link is listed as unreadable'
 	t.true(entries.find(entry => entry.name === 'dangling')?.unreadable);
 });
 
+test('FILE-01 FILE-04 a name Windows cannot open is listed as unreadable and says why when opened', async t => {
+	if (process.platform !== 'win32') {
+		t.pass('only Windows refuses these names');
+		return;
+	}
+	const f = fixture(t);
+	// Only a \\?\ path can create them, and only one can remove them.
+	const extended = (name: string) => `\\\\?\\${path.join(f.root, name)}`;
+	const names = ['CON', 'aux.txt', 'dot.'];
+	writeFileSync(path.join(f.root, 'plain.txt'), 'x');
+	try {
+		for (const name of names) writeFileSync(extended(name), 'x');
+		mkdirSync(extended('prn'));
+		const entries = (await f.service.list(request(''))).entries;
+		for (const name of [...names, 'prn'])
+			t.true(entries.find(entry => entry.name === name)?.unreadable, name);
+		t.false(entries.find(entry => entry.name === 'plain.txt')?.unreadable);
+		await t.throwsAsync(f.service.preview(request('CON')), {
+			code: 'VALIDATION',
+			message: 'Windows cannot open a file or folder with this name',
+		});
+	} finally {
+		for (const name of [...names, 'prn'])
+			rmSync(extended(name), {recursive: true, force: true});
+	}
+});
+
 test('FILE-04 SEC-04 a folder or file the account may not read is refused with its own message', async t => {
 	if (process.platform === 'win32' || process.getuid?.() === 0) {
 		t.pass('permission bits do not apply here');
