@@ -70,12 +70,15 @@ export interface OwnedSessionContext {
 
 // A title is stored and listed, so it is redacted, stripped of control, zero-width and
 // bidi characters, and cut on a character boundary rather than inside a surrogate pair.
-// The first prompt gives 80 characters. A title Nanocoder sends keeps its own 500.
+// The zero-width and bidi characters go first, so one hidden inside a secret cannot stop
+// it from being recognised. The first prompt gives 80 characters. A title Nanocoder sends
+// keeps its own 500.
 const SESSION_TITLE_LIMIT = 500;
 const titleFrom = (text: string, limit = 80): string =>
 	Array.from(
-		redact(text)
-			.replace(/[\u200b\u200e\u200f\u061c\u202a-\u202e\u2066-\u2069]/g, '')
+		redact(
+			text.replace(/[\u200b\u200e\u200f\u061c\u202a-\u202e\u2066-\u2069]/g, ''),
+		)
 			.replace(/[\s\p{Cc}]+/gu, ' ')
 			.trim(),
 	)

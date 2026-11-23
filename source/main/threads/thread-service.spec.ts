@@ -4195,10 +4195,14 @@ test('an imported session title is redacted and cleaned, and one with nothing le
 });
 
 test('the automatic title is redacted, free of control and bidi characters, and cut on a character boundary (DATA-04)', async t => {
-	const [rlo, lri, pdi, bell, emoji] = [0x202e, 0x2066, 0x2069, 7, 0x1f600].map(
-		code => String.fromCodePoint(code),
-	);
+	const [rlo, lri, pdi, bell, emoji, zwsp] = [
+		0x202e, 0x2066, 0x2069, 7, 0x1f600, 0x200b,
+	].map(code => String.fromCodePoint(code));
+	const [front, back] = [fakeToken.slice(0, 12), fakeToken.slice(12)];
 	const cases: Array<[string, string]> = [
+		// A hidden character inside a secret must not stop it from being redacted.
+		[`${front}${zwsp}${back}`, '[redacted]'],
+		[`token ${front}${rlo}${back} sent`, 'token [redacted] sent'],
 		[
 			`export GITHUB_TOKEN=${fakeToken} && deploy`,
 			'export GITHUB_TOKEN=[redacted] && deploy',
