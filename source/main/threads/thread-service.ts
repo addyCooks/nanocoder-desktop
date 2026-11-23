@@ -68,16 +68,18 @@ export interface OwnedSessionContext {
 	requestedMode: NanocoderMode;
 }
 
-// The automatic title is stored and listed, so it is redacted, stripped of control and
+// A title is stored and listed, so it is redacted, stripped of control, zero-width and
 // bidi characters, and cut on a character boundary rather than inside a surrogate pair.
-const titleFrom = (text: string): string =>
+// The first prompt gives 80 characters. A title Nanocoder sends keeps its own 500.
+const SESSION_TITLE_LIMIT = 500;
+const titleFrom = (text: string, limit = 80): string =>
 	Array.from(
 		redact(text)
-			.replace(/[‪-‮⁦-⁩]/g, '')
+			.replace(/[\u200b\u200e\u200f\u061c\u202a-\u202e\u2066-\u2069]/g, '')
 			.replace(/[\s\p{Cc}]+/gu, ' ')
 			.trim(),
 	)
-		.slice(0, 80)
+		.slice(0, limit)
 		.join('');
 
 function assertResumedIdentity(expected: string, session: SessionInfo): void {
@@ -712,9 +714,11 @@ export function createThreadService(
 			...options.store.threads.list(change.projectId, 'active'),
 			...options.store.threads.list(change.projectId, 'archived'),
 		].find(thread => thread.nanocoderSessionId === change.sessionId);
+		const title = titleFrom(change.title, SESSION_TITLE_LIMIT);
 		if (
 			thread &&
-			thread.title !== change.title &&
+			title &&
+			thread.title !== title &&
 			options.store.threads.getTitleManuallySet(thread.projectId, thread.id) ===
 				false
 		)
@@ -722,7 +726,7 @@ export function createThreadService(
 				options.store.threads.setTitle({
 					projectId: thread.projectId,
 					threadId: thread.id,
-					title: change.title,
+					title,
 					manuallySet: false,
 				}),
 			);
@@ -2103,7 +2107,9 @@ export function createThreadService(
 					id: randomUUID(),
 					projectId,
 					nanocoderSessionId: sessionId,
-					title: candidate.session.title,
+					title:
+						titleFrom(candidate.session.title, SESSION_TITLE_LIMIT) ||
+						'new thread',
 					archiveState: 'active',
 					runState: 'ready',
 					lastActivityAt: candidate.session.lastActivityAt ?? now(),
