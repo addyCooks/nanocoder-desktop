@@ -4138,6 +4138,43 @@ test('first prompt saves the mode-ready session ID before content is published (
 	);
 });
 
+test('the automatic title is redacted, free of control and bidi characters, and cut on a character boundary (DATA-04)', async t => {
+	const [rlo, lri, pdi, bell, emoji] = [0x202e, 0x2066, 0x2069, 7, 0x1f600].map(
+		code => String.fromCodePoint(code),
+	);
+	const cases: Array<[string, string]> = [
+		[
+			'export GITHUB_TOKEN=ghp_abcdefghijklmnopqrstuvwxyz0123456789 && deploy',
+			'export GITHUB_TOKEN=[redacted] && deploy',
+		],
+		[
+			'curl -H "Authorization: Bearer sk-ant-api03-ZZZZZZZZZZZZZZZZ"',
+			'curl -H "Authorization: [redacted]"',
+		],
+		[
+			`${rlo}fdp.exe${lri} is${pdi} the${bell} file\n\tnow`,
+			'fdp.exe is the file now',
+		],
+		['a'.repeat(79) + emoji + emoji, 'a'.repeat(79) + emoji],
+		[`${rlo}${bell}`, 'new thread'],
+	];
+	for (const [text, title] of cases) {
+		const {project, service, supervisor} = await fixture(t, true);
+		await supervisor.ensureProcess(project);
+		supervisor.getConnection(project.id).prompt = async () => ({
+			stopReason: 'end_turn',
+		});
+		const {id} = await service.createThread({projectId: project.id});
+		await service.promptThread({projectId: project.id, threadId: id, text});
+		const snapshot = await service.getThreadSnapshot({
+			projectId: project.id,
+			threadId: id,
+		});
+		t.is(snapshot.thread.title, title);
+		await supervisor.close();
+	}
+});
+
 test('unknown project cannot create a thread (CHAT-03)', async t => {
 	const {service, calls} = await fixture(t);
 	const error = await t.throwsAsync(
