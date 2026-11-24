@@ -69,7 +69,7 @@ test('busy composer keeps the editable draft and cancel while blocking controls 
 	t.true(html.includes('aria-describedby='));
 });
 
-test('a draft over the prompt limit names the limit and blocks send, while one at the limit can be sent (CHAT-03)', t => {
+test('a draft over the prompt limit names the limit and blocks send, while one at the limit can be sent (CHAT-16)', t => {
 	const sendDisabled = /<button(?=[^>]*aria-label="send")(?=[^>]*disabled="")/;
 	const over = render({draft: 'x'.repeat(100_001)});
 	t.true(over.includes('message is over 100,000 characters'));
