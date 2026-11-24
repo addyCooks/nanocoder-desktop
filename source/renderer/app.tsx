@@ -988,6 +988,7 @@ export function App() {
 								busy={connecting || projectControls.pending}
 								connecting={connecting}
 								runtime={runtime}
+								recoveredFrom={info?.recoveredDatabase}
 								onConnect={() => {
 									void connect();
 								}}

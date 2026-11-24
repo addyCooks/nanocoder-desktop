@@ -72,6 +72,8 @@ export const CHANNELS = {
 export interface AppInfo {
 	name: string;
 	version: string;
+	// The folder the saved data was moved to when it could not be read, on a start that began empty.
+	recoveredDatabase?: string;
 }
 
 export interface NanocoderRuntime {

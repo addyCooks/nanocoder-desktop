@@ -57,7 +57,10 @@ function parseJson(value: unknown): unknown {
 	throw new IpcFailure('STORE_CORRUPT', 'The desktop metadata is invalid');
 }
 
-function createStore(database: SqlDatabase): DesktopStore {
+function createStore(
+	database: SqlDatabase,
+	recoveredFrom?: string,
+): DesktopStore {
 	const getSettings = (): DesktopSettings => {
 		const settings: Record<string, unknown> = {...defaultSettings};
 		for (const row of database
@@ -79,6 +82,7 @@ function createStore(database: SqlDatabase): DesktopStore {
 	let closed = false;
 	return {
 		...repositories(database),
+		recoveredFrom,
 		threadHistory: threadHistoryRepository(database),
 		agentRuns: agentRunRepository(database),
 		retention: {
@@ -161,6 +165,7 @@ async function openStore(options: StoreOptions): Promise<DesktopStore> {
 	try {
 		let {filename, existed} = prepareDatabasePath(options.databasePath);
 		let version: number;
+		let recoveredFrom: string | undefined;
 		try {
 			database = options.driver.open(filename);
 			const opened = database;
@@ -184,7 +189,7 @@ async function openStore(options: StoreOptions): Promise<DesktopStore> {
 				throw error;
 			database?.close();
 			database = undefined;
-			quarantineDatabase(filename);
+			recoveredFrom = quarantineDatabase(filename);
 			({filename, existed} = prepareDatabasePath(filename));
 			database = options.driver.open(filename);
 			version = 0;
@@ -202,7 +207,7 @@ async function openStore(options: StoreOptions): Promise<DesktopStore> {
 				"UPDATE thread SET run_state = 'interrupted' WHERE run_state IN ('running', 'waiting-approval')",
 			)
 			.run();
-		return createStore(database);
+		return createStore(database, recoveredFrom);
 	} catch (error) {
 		database?.close();
 		if (error instanceof IpcFailure) throw error;

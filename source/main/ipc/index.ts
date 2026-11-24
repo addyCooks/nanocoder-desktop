@@ -833,7 +833,13 @@ export function registerIpcHandlers(
 	registerHandler(
 		CHANNELS.getAppInfo,
 		z.strictObject({}),
-		(): AppInfo => ({name: APP_NAME, version: app.getVersion()}),
+		(): AppInfo => ({
+			name: APP_NAME,
+			version: app.getVersion(),
+			...(workspaceServices.store?.recoveredFrom
+				? {recoveredDatabase: workspaceServices.store.recoveredFrom}
+				: {}),
+		}),
 		allowedOrigins,
 	);
 	registerHandler(

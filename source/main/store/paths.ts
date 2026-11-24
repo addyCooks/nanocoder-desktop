@@ -56,7 +56,8 @@ export function reserveBackupPath(filename: string): string {
 	return destination;
 }
 
-export function quarantineDatabase(filename: string): void {
+// Returns the folder the files were moved into.
+export function quarantineDatabase(filename: string): string {
 	const directory = `${filename}.corrupt-${randomUUID()}`;
 	mkdirSync(directory, {mode: 0o700});
 	for (const suffix of suffixes) {
@@ -67,4 +68,5 @@ export function quarantineDatabase(filename: string): void {
 			);
 		}
 	}
+	return directory;
 }
