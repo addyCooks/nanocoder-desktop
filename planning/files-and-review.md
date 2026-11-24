@@ -3,7 +3,7 @@
 How Milestone 2 is built and where it stops. The requirements are in [`features/file-browser.md`](features/file-browser.md) and [`features/git-review.md`](features/git-review.md); the path rules are in [`security.md`](security.md#path-canonicalisation).
 
 - Status: Implemented, awaiting Windows and Linux CI evidence
-- Last updated: 2026-11-03
+- Last updated: 2026-11-24
 
 Everything here is read-only. The desktop never edits, stages, discards or commits (`GIT-14`, `DEC-24`).
 
@@ -41,7 +41,7 @@ Each is one constant in `source/main/files/limits.ts` or `source/main/git/git-se
 ## Browsing and preview
 
 - A listing is one folder: folders first, then names compared with a fixed `en` collator that ignores case, so the order is the same on every platform.
-- Entries carry their state: normal, link inside, link outside, unreadable, ignored. Git marks (`M`, `A`, `D`, `R`, `U`, `!`) are shown with words for assistive technology, and a folder shows `M` when something inside it changed.
+- Entries carry their state: normal, link inside, link outside, unreadable, ignored. On Windows a name the system cannot open (a device name such as `CON`, or a trailing dot or space) is listed as unreadable, and opening it says why. Git marks (`M`, `A`, `D`, `R`, `U`, `!`) are shown with words for assistive technology, and a folder shows `M` when something inside it changed.
 - Text is detected as UTF-8, UTF-8 with a byte order mark, or UTF-16 with a byte order mark. Anything else is reported as an unsupported encoding and left untouched on disk. Names that can reorder or hide text (control and bidirectional characters) are shown with visible escapes.
 - The tree is a WAI-ARIA tree: one row in the tab order, arrow keys move and expand, Enter opens, Shift+Enter attaches.
 - CodeMirror 6 is loaded only when a file opens, one chunk per language, chosen by extension alone. It is mounted in a shadow root, so it adopts its stylesheet instead of injecting a `<style>` element and the strict Content Security Policy stays unchanged.

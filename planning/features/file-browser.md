@@ -3,7 +3,7 @@
 The read-oriented project tree and file preview.
 
 - Status: Draft
-- Last updated: 2026-11-04
+- Last updated: 2026-11-24
 - Drafted by: @akramcodez
 
 ## Purpose
@@ -52,7 +52,7 @@ Directories first, then files, each sorted by name with a locale-aware, case-ins
 | Ignored | Matched by Git ignore rules | Same as normal, marked ignored |
 | Link inside root | A link whose target is inside the root | Followed like its target |
 | Link outside root | A link whose target is outside the root | None except reveal; marked "outside project" |
-| Unreadable | Permission denied, or locked by another program | Retry; the error is shown |
+| Unreadable | Permission denied, locked by another program, or (on Windows) a name the system cannot open, such as `CON` or a trailing dot | Retry; the error is shown |
 | Gone | Deleted since it was listed | Removed on the next refresh |
 
 ### Watching
