@@ -12,7 +12,7 @@ export async function openImportsFromPalette(page: Page): Promise<void> {
 		exact: true,
 	});
 	const search = page.getByRole('combobox', {
-		name: 'find a command',
+		name: 'find a thread or action',
 		exact: true,
 	});
 	await trigger.click();

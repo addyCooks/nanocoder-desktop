@@ -392,10 +392,23 @@ test('TERM-07 real POSIX teardown captures a shell and its jobs on a real tty an
 		await captureTerminalProcesses(pid, [], `/dev/${shell[3]}`, stale),
 		stale,
 	);
-	// Here `script` reaps the shell, not node-pty, so a late reap may outlast the
-	// shell-exit wait. Every member must still be dead or a zombie afterwards.
+	// A late reap can exhaust the wait or its final ps probe; still verify every member below.
 	await terminateTree(pid, [], `/dev/${shell[3]}`, known).catch(error => {
-		if ((error as Error).message !== 'Terminal cleanup deadline exceeded')
+		const failure = error as Error & {
+			killed?: boolean;
+			signal?: string;
+			cmd?: string;
+		};
+		const probeTimedOut =
+			failure.killed === true &&
+			failure.signal === 'SIGTERM' &&
+			/^\/\S*\/ps -p \d+ -o pid=,ppid=,pgid=,stat=,tty=,lstart=$/u.test(
+				failure.cmd ?? '',
+			);
+		if (
+			failure.message !== 'Terminal cleanup deadline exceeded' &&
+			!probeTimedOut
+		)
 			throw error;
 	});
 	host.kill('SIGKILL');

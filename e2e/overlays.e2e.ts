@@ -110,7 +110,7 @@ test('no results remain keyboard safe', async () => {
 	const input = palette.getByRole('combobox');
 	await input.fill('no-matching-action');
 	await expect(
-		palette.getByText('no commands found. try a different action name.'),
+		palette.getByText('no threads or actions found. try a different search.'),
 	).toBeVisible();
 	await expect(input).toHaveAttribute('aria-expanded', 'false');
 	await expect(palette.getByRole('listbox')).toHaveCount(0);
@@ -148,7 +148,7 @@ test('open-folder command calls the existing picker and cancellation preserves f
 	const trigger = page.getByRole('button', {name: 'command palette'});
 	await trigger.click();
 	await page
-		.getByRole('combobox', {name: 'find a command', exact: true})
+		.getByRole('combobox', {name: 'find a thread or action', exact: true})
 		.fill('open a project folder');
 	await page.keyboard.press('Enter');
 	await expect(page.getByRole('dialog')).toBeHidden();
@@ -173,7 +173,7 @@ test('disabled actions keep a visible reason and cannot run with Enter or pointe
 		const page = await unavailable.firstWindow();
 		await page.getByRole('button', {name: 'command palette'}).click();
 		await page
-			.getByRole('combobox', {name: 'find a command', exact: true})
+			.getByRole('combobox', {name: 'find a thread or action', exact: true})
 			.fill('open');
 		const option = page.getByRole('option', {name: /open a project folder/});
 		await expect(option).toHaveAttribute('aria-disabled', 'true');
@@ -219,10 +219,16 @@ test('overlays match both themes at every width and retain visible keyboard focu
 				'none',
 			);
 			await expect(
-				page.getByRole('combobox', {name: 'find a command', exact: true}),
+				page.getByRole('combobox', {
+					name: 'find a thread or action',
+					exact: true,
+				}),
 			).toBeFocused();
 			await expect(
-				page.getByRole('combobox', {name: 'find a command', exact: true}),
+				page.getByRole('combobox', {
+					name: 'find a thread or action',
+					exact: true,
+				}),
 			).toHaveCSS('outline-width', '2px');
 			expect(await visibleTextContrast(page, theme)).toEqual([]);
 			await page.keyboard.press('Tab');
@@ -304,7 +310,7 @@ test('settled toast contrast passes in both themes and active hosts without focu
 	for (const theme of ['light', 'dark']) {
 		await trigger.click();
 		await page
-			.getByRole('combobox', {name: 'find a command', exact: true})
+			.getByRole('combobox', {name: 'find a thread or action', exact: true})
 			.fill(`switch to ${theme}`);
 		await page.keyboard.press('Enter');
 		await expect(toast).toContainText(`switched to ${theme} theme`);
@@ -314,7 +320,10 @@ test('settled toast contrast passes in both themes and active hosts without focu
 			const focused =
 				host === 'closed'
 					? trigger
-					: page.getByRole('combobox', {name: 'find a command', exact: true});
+					: page.getByRole('combobox', {
+							name: 'find a thread or action',
+							exact: true,
+						});
 			await expect(region).toHaveAttribute('aria-live', 'polite');
 			await expect(region).toHaveAttribute('aria-atomic', 'true');
 			await expect(toast).toHaveAttribute('data-exiting', 'false');
@@ -350,7 +359,10 @@ test('settled toast contrast passes in both themes and active hosts without focu
 		}
 		await expect(toast).toHaveCount(0);
 		await expect(
-			page.getByRole('combobox', {name: 'find a command', exact: true}),
+			page.getByRole('combobox', {
+				name: 'find a thread or action',
+				exact: true,
+			}),
 		).toBeFocused();
 		await page.keyboard.press('Escape');
 		await expect(trigger).toBeFocused();
@@ -380,7 +392,7 @@ test('projects dialog adds and the palette opens and locates projects through th
 	const command = async (label: string) => {
 		await page.getByRole('button', {name: 'command palette'}).click();
 		await page
-			.getByRole('combobox', {name: 'find a command', exact: true})
+			.getByRole('combobox', {name: 'find a thread or action', exact: true})
 			.fill(label);
 		await expect(
 			page
@@ -463,7 +475,7 @@ test('projects dialog adds and the palette opens and locates projects through th
 	await hideProjects();
 	await page.getByRole('button', {name: 'command palette'}).click();
 	await page
-		.getByRole('combobox', {name: 'find a command', exact: true})
+		.getByRole('combobox', {name: 'find a thread or action', exact: true})
 		.fill('open project palette-project');
 	await expect(
 		page
@@ -526,10 +538,10 @@ test('keyboard selection stays visible when recent projects overflow the palette
 	});
 	expect(visible).toBe(true);
 	await expect(
-		page.getByRole('combobox', {name: 'find a command', exact: true}),
+		page.getByRole('combobox', {name: 'find a thread or action', exact: true}),
 	).toBeFocused();
 	await expect(
-		page.getByRole('combobox', {name: 'find a command', exact: true}),
+		page.getByRole('combobox', {name: 'find a thread or action', exact: true}),
 	).toBeInViewport({ratio: 1});
 	const palette = page.getByRole('dialog', {
 		name: 'command palette',
@@ -562,7 +574,7 @@ test('composing Escape cancels neither the palette nor its search focus', async 
 	for (const composing of [{isComposing: true}, {keyCode: 229}]) {
 		await page.getByRole('button', {name: 'command palette'}).click();
 		const input = page.getByRole('combobox', {
-			name: 'find a command',
+			name: 'find a thread or action',
 			exact: true,
 		});
 		await input.fill('theme');
@@ -676,7 +688,7 @@ for (const modal of ['closed', 'palette', 'shortcuts'] as const) {
 			if (!previousRegion) throw new Error('Missing persistent notification');
 			await trigger.click();
 			await page
-				.getByRole('combobox', {name: 'find a command', exact: true})
+				.getByRole('combobox', {name: 'find a thread or action', exact: true})
 				.fill('switch to light theme');
 			await page.keyboard.press('Enter');
 			await expect(page.locator('dialog[open]')).toHaveCount(0);
@@ -689,7 +701,10 @@ for (const modal of ['closed', 'palette', 'shortcuts'] as const) {
 				await trigger.click();
 				if (modal === 'shortcuts') {
 					await page
-						.getByRole('combobox', {name: 'find a command', exact: true})
+						.getByRole('combobox', {
+							name: 'find a thread or action',
+							exact: true,
+						})
 						.fill('keyboard shortcuts');
 					await page.keyboard.press('Enter');
 				}
@@ -698,7 +713,10 @@ for (const modal of ['closed', 'palette', 'shortcuts'] as const) {
 				modal === 'closed'
 					? trigger
 					: modal === 'palette'
-						? page.getByRole('combobox', {name: 'find a command', exact: true})
+						? page.getByRole('combobox', {
+								name: 'find a thread or action',
+								exact: true,
+							})
 						: page.getByRole('button', {name: 'close keyboard shortcuts'});
 			await expect(focused).toBeFocused();
 			await app.evaluate(() => (globalThis as FailureMain).failThemeSave?.());

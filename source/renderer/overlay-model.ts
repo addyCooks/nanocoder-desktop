@@ -9,6 +9,21 @@ export interface PaletteAction {
 	run(): void;
 }
 
+export interface PaletteThread extends PaletteAction {
+	archived: boolean;
+	current: boolean;
+}
+
+type PaletteResult =
+	| (PaletteAction & {kind: 'action'})
+	| (PaletteThread & {kind: 'thread'});
+
+interface PaletteGroup {
+	id: 'active-threads' | 'archived-threads' | 'actions';
+	label: string;
+	results: PaletteResult[];
+}
+
 export type ThreadDialog =
 	| {kind: 'thread-menu'; threadId: string}
 	| {kind: 'rename'; threadId: string}
@@ -96,6 +111,50 @@ export function filterActions(actions: PaletteAction[], query: string) {
 		.filter(item => item.matches)
 		.sort((a, b) => a.rank - b.rank || a.index - b.index)
 		.map(item => item.action);
+}
+
+export function filterPalette(
+	actions: PaletteAction[],
+	threads: PaletteThread[],
+	query: string,
+): PaletteGroup[] {
+	if (!query.trim())
+		return [
+			{
+				id: 'actions',
+				label: 'actions',
+				results: actions.map(action => ({...action, kind: 'action'})),
+			},
+		];
+	const fold = (value: string) =>
+		value.toLocaleLowerCase().replaceAll('ς', 'σ');
+	const text = fold(query.trim());
+	const matches = threads.filter(thread => fold(thread.label).includes(text));
+	const groups: PaletteGroup[] = [
+		{
+			id: 'active-threads',
+			label: 'active threads',
+			results: matches
+				.filter(thread => !thread.archived)
+				.map(thread => ({...thread, kind: 'thread'})),
+		},
+		{
+			id: 'archived-threads',
+			label: 'archived threads',
+			results: matches
+				.filter(thread => thread.archived)
+				.map(thread => ({...thread, kind: 'thread'})),
+		},
+		{
+			id: 'actions',
+			label: 'actions',
+			results: filterActions(actions, query).map(action => ({
+				...action,
+				kind: 'action',
+			})),
+		},
+	];
+	return groups.filter(group => group.results.length > 0);
 }
 
 export function moveSelection(index: number, delta: number, length: number) {

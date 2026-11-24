@@ -3,6 +3,7 @@ import {
 	commandModifier,
 	dialogLabel,
 	filterActions,
+	filterPalette,
 	focusReturn,
 	importedToast,
 	keyHint,
@@ -48,6 +49,99 @@ test('equal palette ranks keep the source order including disabled actions', t =
 	];
 	t.deepEqual(filterActions(actions, 'open'), actions);
 	t.deepEqual(filterActions(actions, 'two'), [actions[1]]);
+});
+
+test('an empty palette query keeps the existing action list and hides threads', t => {
+	const actions = [action('rename', 'rename thread', 'name chat session')];
+	const threads = [
+		{
+			...action('thread-open-a', 'rename thread'),
+			archived: false,
+			current: true,
+		},
+	];
+	const groups = filterPalette(actions, threads, '   ');
+	t.deepEqual(
+		groups.map(group => group.id),
+		['actions'],
+	);
+	t.deepEqual(
+		groups.flatMap(group => group.results).map(result => result.id),
+		['rename'],
+	);
+});
+
+test('a title query groups active and archived threads before matching actions', t => {
+	const actions = [
+		action('shortcuts', 'keyboard shortcuts'),
+		action('new', 'new thread', 'chat session'),
+	];
+	const threads = [
+		{
+			...action('thread-open-active', 'Keyboard navigation'),
+			archived: false,
+			current: true,
+		},
+		{
+			...action('thread-open-other', 'release notes'),
+			archived: false,
+			current: false,
+		},
+		{
+			...action('thread-open-archived', 'old keyboard research'),
+			archived: true,
+			current: false,
+		},
+	];
+	const groups = filterPalette(actions, threads, 'KEYBOARD');
+	t.deepEqual(
+		groups.map(group => group.id),
+		['active-threads', 'archived-threads', 'actions'],
+	);
+	t.deepEqual(
+		groups.flatMap(group => group.results).map(result => result.id),
+		['thread-open-active', 'thread-open-archived', 'shortcuts'],
+	);
+	t.true(
+		groups[0]?.results[0]?.kind === 'thread' && groups[0].results[0].current,
+	);
+});
+
+test('palette title matching is a case-insensitive substring, not action keyword matching', t => {
+	const threads = [
+		{
+			...action('thread-open-a', 'Review the parser'),
+			archived: false,
+			current: false,
+		},
+	];
+	t.deepEqual(
+		filterPalette([], threads, 'THE PAR')
+			.flatMap(group => group.results)
+			.map(result => result.id),
+		['thread-open-a'],
+	);
+	t.deepEqual(filterPalette([], threads, 'parser review'), []);
+	t.deepEqual(filterPalette([], threads, 'missing'), []);
+});
+
+test('a project without threads keeps matching actions and an honest empty result', t => {
+	const actions = [action('new', 'new thread', 'chat session')];
+	t.deepEqual(
+		filterPalette(actions, [], 'new')
+			.flatMap(group => group.results)
+			.map(result => result.id),
+		['new'],
+	);
+	t.deepEqual(filterPalette(actions, [], 'nothing matches'), []);
+});
+
+test('Greek sigma matches regardless of whether the query ends at the sigma', t => {
+	const threads = [
+		{...action('greek', 'ΟΣΑ'), archived: false, current: false},
+	];
+	t.is(filterPalette([], threads, 'ΟΣ')[0]?.results[0]?.id, 'greek');
+	t.is(filterPalette([], threads, 'οσ')[0]?.results[0]?.id, 'greek');
 });
 
 test('keyboard selection wraps, resets and handles empty results', t => {

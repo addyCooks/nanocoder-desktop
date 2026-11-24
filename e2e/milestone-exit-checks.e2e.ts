@@ -268,7 +268,9 @@ test('keyboard project, palette and approval journey exposes named roles and sta
 			name: 'command palette',
 			exact: true,
 		});
-		const search = palette.getByRole('combobox', {name: 'find a command'});
+		const search = palette.getByRole('combobox', {
+			name: 'find a thread or action',
+		});
 		await expect(search).toBeFocused();
 		await search.pressSequentially('theme');
 		await expect(palette.getByRole('option')).toHaveCount(1);
@@ -276,7 +278,7 @@ test('keyboard project, palette and approval journey exposes named roles and sta
 		const combobox = nodes.find(
 			node =>
 				node.role?.value === 'combobox' &&
-				node.name?.value === 'find a command',
+				node.name?.value === 'find a thread or action',
 		);
 		expect(combobox?.properties).toEqual(
 			expect.arrayContaining([
