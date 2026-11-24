@@ -69,6 +69,23 @@ test('busy composer keeps the editable draft and cancel while blocking controls 
 	t.true(html.includes('aria-describedby='));
 });
 
+test('a draft over the prompt limit names the limit and blocks send, while one at the limit can be sent (CHAT-16)', t => {
+	const sendDisabled = /<button(?=[^>]*aria-label="send")(?=[^>]*disabled="")/;
+	const over = render({draft: 'x'.repeat(100_001)});
+	t.true(over.includes('message is over 100,000 characters'));
+	t.regex(over, sendDisabled);
+	// Whitespace around the message is trimmed before the limit applies.
+	const atLimit = render({draft: ` ${'x'.repeat(100_000)} \n`});
+	t.false(atLimit.includes('message is over'));
+	t.notRegex(atLimit, sendDisabled);
+	t.true(
+		render({
+			draft: 'x'.repeat(100_001),
+			sendReason: 'another thread is running',
+		}).includes('another thread is running'),
+	);
+});
+
 test('mode selection distinguishes pending yolo from a project default and discloses alwaysAllow (CHAT-11 DEC-31)', t => {
 	const html = render({mode: 'yolo'});
 	t.true(html.includes('yolo · pending first message'));

@@ -11,6 +11,7 @@ import {
 } from '@/main/store/validation';
 import {
 	CHANNELS,
+	MAX_PROMPT_LENGTH,
 	type WorkspaceMethod,
 	type WorkspaceRequests,
 	type WorkspaceValues,
@@ -95,7 +96,7 @@ const workspaceSchemas: {
 	deleteThreadHistory: threadRequest,
 	promptThread: z.strictObject({
 		...thread,
-		text: z.string().trim().min(1).max(100_000),
+		text: z.string().trim().min(1).max(MAX_PROMPT_LENGTH),
 		attachments: z.array(attachmentSchema).max(20).optional(),
 	}),
 	cancelThread: threadRequest,
