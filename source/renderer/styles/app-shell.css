@@ -310,6 +310,21 @@
 	}
 }
 
+/* Down to the minimum window width the title and its menu would be squeezed to nothing
+   and spill over the actions, so the actions drop to their own row instead. */
+@media (max-width: 780px) {
+	.shell-title-bar {
+		flex-wrap: wrap;
+		padding-block: 4px;
+	}
+	.shell-identity {
+		min-width: 176px;
+	}
+	.shell-header-actions {
+		margin-left: auto;
+	}
+}
+
 .shell-conversation-footer {
 	flex: 0 1 auto;
 	min-height: 0;

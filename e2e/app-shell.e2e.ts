@@ -177,7 +177,9 @@ test('the window will not shrink until the header clips, and a long project name
 						.querySelector('.shell-header-actions')
 						?.getBoundingClientRect();
 					const name = document.querySelector('.shell-breadcrumb');
-					if (!actions || !name) throw new Error('Missing header region');
+					const identity = document.querySelector('.shell-identity');
+					if (!actions || !name || !identity)
+						throw new Error('Missing header region');
 					return {
 						narrow: innerWidth < 700,
 						actionsFit: actions.right <= innerWidth,
@@ -185,10 +187,27 @@ test('the window will not shrink until the header clips, and a long project name
 						nameContained:
 							name.scrollWidth <= name.clientWidth ||
 							getComputedStyle(name).overflowX !== 'visible',
+						// The title row keeps room for its title and menu, on its own line if need be.
+						identityRoomy: identity.getBoundingClientRect().width >= 176,
+						identityClear: [...identity.children].every(part => {
+							const box = part.getBoundingClientRect();
+							return (
+								box.right <= actions.left ||
+								box.left >= actions.right ||
+								box.bottom <= actions.top ||
+								box.top >= actions.bottom
+							);
+						}),
 					};
 				}),
 			)
-			.toEqual({narrow: true, actionsFit: true, nameContained: true});
+			.toEqual({
+				narrow: true,
+				actionsFit: true,
+				nameContained: true,
+				identityRoomy: true,
+				identityClear: true,
+			});
 	} finally {
 		await app.evaluate(({BrowserWindow}) => {
 			BrowserWindow.getAllWindows()[0].setContentSize(1240, 900);
