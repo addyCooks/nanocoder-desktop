@@ -94,7 +94,7 @@ Suggestion (not discussed):
 
 | Column | Could it hold sensitive data? | Mitigation |
 |---|---|---|
-| `thread.title` | Yes: generated from the first prompt | Stored locally only; removed with the thread. |
+| `thread.title` | Yes: generated from the first prompt, or sent by Nanocoder, redacted, with control, zero-width and bidi characters removed | Stored locally only; removed with the thread. |
 | `thread.title_manually_set` | No: one boolean | No title history or conversation data. Removed with the thread. |
 | `turn_summary.touched_files` | Paths can reveal project structure | Relative paths only (`DATA-05`). |
 | `browser_tab.url` | Yes: query strings can hold tokens | Cleared with browser data; Suggestion: strip query strings before storing. |
