@@ -7,12 +7,13 @@ import {keyHint} from '@/renderer/overlay-model';
 import {SlashSuggestions} from '@/renderer/stream-commands';
 import type {Transcript} from '@/renderer/transcript';
 import {Button} from '@/renderer/ui';
-import type {
-	DefaultMode,
-	NanocoderMode,
-	ProjectConfigSelect,
-	ProjectControls,
-	StreamCommand,
+import {
+	type DefaultMode,
+	MAX_PROMPT_LENGTH,
+	type NanocoderMode,
+	type ProjectConfigSelect,
+	type ProjectControls,
+	type StreamCommand,
 } from '@/shared/ipc';
 
 export interface ComposerProps {
@@ -91,7 +92,11 @@ export function Composer(props: ComposerProps) {
 				: null);
 	const sendReason =
 		props.sendReason ??
-		(!props.editable ? 'this thread cannot accept input' : null);
+		(!props.editable
+			? 'this thread cannot accept input'
+			: props.draft.trim().length > MAX_PROMPT_LENGTH
+				? `message is over ${MAX_PROMPT_LENGTH.toLocaleString('en-US')} characters · shorten it to send`
+				: null);
 	const emptyDraft = !props.draft.trim();
 	const send = () => {
 		if (!sendReason && !emptyDraft) props.onSend();
