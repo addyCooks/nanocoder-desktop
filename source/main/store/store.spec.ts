@@ -1154,6 +1154,19 @@ test('repositories mark missing and replaced roots without following them', asyn
 	});
 });
 
+test('a project root replaced by a file is a changed folder, not an available one', async t => {
+	const f = fixture(t);
+	const store = await f.open();
+	const root = path.join(f.root, 'project');
+	mkdirSync(root);
+	const row = project(root);
+	store.projects.save(row);
+	t.is(store.projects.get(row.id)?.availability, 'available');
+	rmSync(root, {recursive: true});
+	writeFileSync(root, 'not a folder');
+	t.is(store.projects.get(row.id)?.availability, 'changed');
+});
+
 test('concurrent opens recheck the migration version under the write lock', async t => {
 	const f = fixture(t);
 	const previous = f.driver.open(f.filename);

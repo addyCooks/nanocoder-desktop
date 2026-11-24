@@ -1,4 +1,4 @@
-import {realpathSync} from 'node:fs';
+import {realpathSync, statSync} from 'node:fs';
 import path from 'node:path';
 import {IpcFailure} from '@/main/ipc/handle-request';
 import type {
@@ -17,8 +17,13 @@ import {
 } from '@/main/store/validation';
 import type {ProjectInfo, ThreadInfo} from '@/shared/ipc';
 
-function availability(root: string): ProjectInfo['availability'] {
+function availability(
+	root: string,
+	folder = false,
+): ProjectInfo['availability'] {
 	try {
+		// A project root that became a file is a changed folder, not an available one.
+		if (folder && !statSync(root).isDirectory()) return 'changed';
 		return realpathSync.native(root) === root ? 'available' : 'changed';
 	} catch {
 		return 'missing';
@@ -35,7 +40,7 @@ function projectFrom(row: Record<string, SqlValue>): ProjectInfo {
 		defaultMode: row.default_mode,
 		lastOpenedAt: row.last_opened_at,
 		createdAt: row.created_at,
-		availability: availability(String(row.canonical_root)),
+		availability: availability(String(row.canonical_root), true),
 	});
 }
 
