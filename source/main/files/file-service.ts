@@ -42,6 +42,8 @@ export interface FileServiceOptions {
 	opened?(projectId: string, root: string): void;
 	watch?(projectId: string): 'active' | 'limited';
 	now?(): number;
+	// Whose file name rules apply. Tests set it to run the Windows rules on every platform.
+	platform?: NodeJS.Platform;
 }
 
 export interface Located {
@@ -62,7 +64,7 @@ export class FileService {
 	async locate(projectId: string, input: string): Promise<Located> {
 		const project = this.options.project(projectId);
 		const root = await authorisedRoot(project);
-		refuseGitFolder(relativeSegments(input));
+		refuseGitFolder(relativeSegments(input, this.options.platform));
 		const resolved = await resolveInside(root, input);
 		// A link can lead into .git without naming it.
 		refuseGitFolder(
@@ -76,7 +78,7 @@ export class FileService {
 	// in .git, and the deepest part that still exists must stay inside the root.
 	async checkPath(projectId: string, input: string): Promise<void> {
 		const root = await authorisedRoot(this.options.project(projectId));
-		const segments = relativeSegments(input);
+		const segments = relativeSegments(input, this.options.platform);
 		refuseGitFolder(segments);
 		for (let length = segments.length; length >= 0; length--) {
 			try {
@@ -140,7 +142,9 @@ export class FileService {
 			const chunk = kept.slice(index, index + 64);
 			entries.push(
 				...(await Promise.all(
-					chunk.map(item => classify(root, resolved.real, item, marks)),
+					chunk.map(item =>
+						classify(root, resolved.real, item, marks, this.options.platform),
+					),
 				)),
 			);
 		}
@@ -249,6 +253,7 @@ async function classify(
 	directory: string,
 	item: Dirent,
 	marks: ReadonlyMap<string, ReviewMark> | undefined,
+	platform: NodeJS.Platform = process.platform,
 ): Promise<FileEntry> {
 	const full = path.join(directory, item.name);
 	const mark = marks?.get(item.name) ?? null;
@@ -258,7 +263,7 @@ async function classify(
 		link: 'none',
 		size: null,
 		// Opening such a name is refused, so the tree says so instead of offering it.
-		unreadable: process.platform === 'win32' && windowsRefusesName(item.name),
+		unreadable: platform === 'win32' && windowsRefusesName(item.name),
 		ignored: mark === 'ignored',
 		mark,
 	};

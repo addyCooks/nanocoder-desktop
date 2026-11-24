@@ -3,7 +3,7 @@
 How Milestone 2 is built and where it stops. The requirements are in [`features/file-browser.md`](features/file-browser.md) and [`features/git-review.md`](features/git-review.md); the path rules are in [`security.md`](security.md#path-canonicalisation).
 
 - Status: Implemented, awaiting Windows and Linux CI evidence
-- Last updated: 2026-11-03
+- Last updated: 2026-11-24
 
 Everything here is read-only. The desktop never edits, stages, discards or commits (`GIT-14`, `DEC-24`).
 

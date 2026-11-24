@@ -15,7 +15,7 @@ import {FILE_LIMITS} from '@/main/files/limits';
 import type {ProjectInfo} from '@/shared/ipc';
 import type {ReviewMark} from '@/shared/review';
 
-function fixture(t: ExecutionContext) {
+function fixture(t: ExecutionContext, platform?: NodeJS.Platform) {
 	const base = realpathSync.native(
 		mkdtempSync(path.join(tmpdir(), 'nd-files-')),
 	);
@@ -40,6 +40,7 @@ function fixture(t: ExecutionContext) {
 	const service = new FileService({
 		project: id => (id === project.id ? project : undefined),
 		marks: (_project, directory) => marks.get(directory) ?? new Map(),
+		platform,
 	});
 	const link = (target: string, name: string, kind: 'file' | 'junction') => {
 		try {
@@ -345,6 +346,35 @@ test('FILE-01 FILE-04 a name Windows cannot open is listed as unreadable and say
 		for (const name of [...names, 'prn'])
 			rmSync(extended(name), {recursive: true, force: true});
 	}
+});
+
+test('FILE-01 FILE-04 the Windows name rules flag and refuse the same names on every platform', async t => {
+	if (process.platform === 'win32') {
+		t.pass(
+			'a Windows folder cannot hold these names; the test above covers it',
+		);
+		return;
+	}
+	const f = fixture(t, 'win32');
+	const names = ['CON', 'aux.txt', 'dot.'];
+	writeFileSync(path.join(f.root, 'plain.txt'), 'x');
+	for (const name of names) writeFileSync(path.join(f.root, name), 'x');
+	mkdirSync(path.join(f.root, 'prn'));
+	const entries = (await f.service.list(request(''))).entries;
+	for (const name of [...names, 'prn'])
+		t.true(entries.find(entry => entry.name === name)?.unreadable, name);
+	t.false(entries.find(entry => entry.name === 'plain.txt')?.unreadable);
+	await t.throwsAsync(f.service.preview(request('CON')), {
+		code: 'VALIDATION',
+		message: 'Windows cannot open a file or folder with this name',
+	});
+	// Without the Windows rules the same names are ordinary entries.
+	const own = new FileService({
+		project: id => (id === f.project.id ? f.project : undefined),
+	});
+	const plain = (await own.list(request(''))).entries;
+	t.is(plain.length, entries.length);
+	t.false(plain.some(entry => entry.unreadable));
 });
 
 test('FILE-04 SEC-04 a folder or file the account may not read is refused with its own message', async t => {
