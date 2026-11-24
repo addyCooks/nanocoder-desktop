@@ -302,6 +302,39 @@ test('the built app quarantines a corrupt store and keeps starting', async () =>
 		expect(
 			readFileSync(path.join(profile, quarantine[0], 'desktop.sqlite')),
 		).toEqual(corrupt);
+		// The user is told the saved data was set aside, and where (P4-02).
+		const info = (await page.evaluate(() =>
+			(window as unknown as {desktop: DesktopApi}).desktop.getAppInfo(),
+		)) as {ok: true; value: {recoveredDatabase?: string}};
+		expect(path.basename(info.value.recoveredDatabase ?? '')).toBe(
+			quarantine[0],
+		);
+		await expect(
+			page.getByRole('status').filter({hasText: 'could not be read'}),
+		).toContainText(quarantine[0]);
+	} finally {
+		await app.close();
+	}
+});
+
+test('a healthy store gives no notice that saved data was set aside', async () => {
+	const app = await launch();
+	try {
+		const page = await app.firstWindow();
+		await expect(page.getByRole('heading', {level: 1})).toHaveText(
+			'Nanocoder Desktop',
+		);
+		await expect(
+			page.getByRole('status').filter({hasText: 'could not be read'}),
+		).toHaveCount(0);
+		expect(
+			await page.evaluate(() =>
+				(window as unknown as {desktop: DesktopApi}).desktop.getAppInfo(),
+			),
+		).toEqual({
+			ok: true,
+			value: {name: 'Nanocoder Desktop', version: expect.any(String)},
+		});
 	} finally {
 		await app.close();
 	}

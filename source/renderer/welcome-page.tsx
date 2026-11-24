@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {Icon} from '@/renderer/icons';
 import {dayAge, shortRoot} from '@/renderer/recency';
-import {Button, Divider} from '@/renderer/ui';
+import {Button, Card, Divider} from '@/renderer/ui';
 import type {IpcResult, NanocoderRuntime, ProjectInfo} from '@/shared/ipc';
 
 export interface WelcomePageProps {
@@ -10,6 +10,8 @@ export interface WelcomePageProps {
 	busy: boolean;
 	connecting: boolean;
 	runtime: IpcResult<NanocoderRuntime> | null;
+	// Where the saved data was moved to when it could not be read.
+	recoveredFrom?: string;
 	onConnect(): void;
 	onOpen(projectId: string): void;
 	onLocate(projectId: string): void;
@@ -22,6 +24,7 @@ export function WelcomePage({
 	busy,
 	connecting,
 	runtime,
+	recoveredFrom,
 	onConnect,
 	onOpen,
 	onLocate,
@@ -43,6 +46,15 @@ export function WelcomePage({
 				open a project folder to start a Nanocoder thread. you’ll review what
 				can run before you trust the folder.
 			</p>
+			{recoveredFrom && (
+				<Card role="status" className="nc-recovery nc-failure-notice">
+					<p className="nc-failure-title">your saved data could not be read</p>
+					<p>
+						projects, threads and settings were set aside in {recoveredFrom},
+						and the desktop started empty.
+					</p>
+				</Card>
+			)}
 			{runtime?.ok && (
 				<Button className="welcome-open" onClick={onConnect} disabled={busy}>
 					<Icon name="folder" />

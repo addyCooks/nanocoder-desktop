@@ -90,6 +90,8 @@ export interface DesktopStore {
 	threadHistory: ThreadHistoryRepository;
 	agentRuns: AgentRunRepository;
 	retention: RetentionRepository;
+	// Set when the database could not be read and was moved aside, so the user can be told.
+	recoveredFrom?: string;
 	close(): void;
 }
 

@@ -775,8 +775,12 @@ test('corrupt bytes are moved aside and a fresh database starts', async t => {
 		readFileSync(path.join(f.root, directory as string, 'desktop.sqlite')),
 		bytes,
 	);
+	// The store says where the old data went, so the user can be told (P4-02).
+	t.is(path.basename(store.recoveredFrom as string), directory as string);
 	store.close();
-	(await f.open()).close();
+	const reopened = await f.open();
+	t.is(reopened.recoveredFrom, undefined);
+	reopened.close();
 	t.is(
 		readdirSync(f.root).filter(name => name.includes('.corrupt-')).length,
 		1,
