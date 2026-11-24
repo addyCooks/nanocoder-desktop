@@ -281,7 +281,7 @@ test('the built main process persists settings and UI state under userData', asy
 	}
 });
 
-test('the built app quarantines a corrupt store and keeps starting', async () => {
+test('the built app quarantines a corrupt store and keeps starting (DATA-08)', async () => {
 	const corrupt = Buffer.from('fixture corrupt SQLite database');
 	writeFileSync(path.join(profile, 'desktop.sqlite'), corrupt);
 	const app = await launch();
@@ -317,7 +317,7 @@ test('the built app quarantines a corrupt store and keeps starting', async () =>
 	}
 });
 
-test('a healthy store gives no notice that saved data was set aside', async () => {
+test('a healthy store gives no notice that saved data was set aside (DATA-08)', async () => {
 	const app = await launch();
 	try {
 		const page = await app.firstWindow();

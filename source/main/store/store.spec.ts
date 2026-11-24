@@ -760,7 +760,7 @@ test('backup failure stops the upgrade and closes the connection', async t => {
 	t.is(schemaVersion(db), 0);
 });
 
-test('corrupt bytes are moved aside and a fresh database starts', async t => {
+test('corrupt bytes are moved aside and a fresh database starts (DATA-08)', async t => {
 	const f = fixture(t);
 	const bytes = Buffer.from('fixture invalid SQLite bytes');
 	writeFileSync(f.filename, bytes);

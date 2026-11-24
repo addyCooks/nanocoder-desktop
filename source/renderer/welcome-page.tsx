@@ -51,7 +51,8 @@ export function WelcomePage({
 					<p className="nc-failure-title">your saved data could not be read</p>
 					<p>
 						projects, threads and settings were set aside in {recoveredFrom},
-						and the desktop started empty.
+						and the desktop started empty. open a project folder again, then
+						import its saved sessions to get its threads back.
 					</p>
 				</Card>
 			)}
