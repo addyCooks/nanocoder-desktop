@@ -167,11 +167,13 @@ export function Workbench({
 				id="workbench-panel-review"
 				aria-labelledby="workbench-tab-review"
 				hidden={tab !== 'review'}
-				className="workbench-panel"
+				className="workbench-panel workbench-panel--review"
 			>
 				{tab === 'review' && (
 					<ReviewPanel
 						state={review.state}
+						interactions={review.interactions}
+						onInteraction={review.setInteraction}
 						commentReason={attachReason}
 						onFilter={review.setFilter}
 						onView={review.setView}

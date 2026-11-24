@@ -32,7 +32,7 @@ let app: ElectronApplication;
 let page: Page;
 
 const git = (...args: string[]) =>
-	execFileSync('git', args, {
+	execFileSync('git', ['-c', 'core.hooksPath=', ...args], {
 		cwd: project,
 		encoding: 'utf8',
 		env: {
@@ -83,6 +83,7 @@ async function start(
 		git('-c', 'init.defaultBranch=main', 'init', '-q');
 		git('config', 'core.autocrlf', 'false');
 		// The agent's marker file is test scaffolding, not a change to review.
+		mkdirSync(path.join(project, '.git/info'), {recursive: true});
 		writeFileSync(path.join(project, '.git/info/exclude'), '.fake-nanocoder\n');
 		git('add', '-A');
 		git('commit', '-q', '-m', 'initial');
@@ -582,6 +583,397 @@ test('SP-09 GIT-07 a diff line range can be chosen from the keyboard', async () 
 	).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(page.getByRole('form', {name: 'review comment'})).toHaveCount(0);
+});
+
+test('SP-08 GIT-04 one text change opens with its diff visible and a bounded file list', async () => {
+	await start();
+	writeFileSync(path.join(project, 'README.md'), '# demo\nvisible now\n');
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	const lines = page.getByRole('listbox', {
+		name: /unstaged changes in README\.md/,
+	});
+	await expect(lines).toBeVisible();
+	await expect(lines).toBeInViewport();
+	await expect(
+		lines.getByRole('option', {name: /added line 2: visible now/}),
+	).toBeVisible();
+	const sizes = await page.evaluate(() => {
+		const panel = document.querySelector('.review-panel') as HTMLElement;
+		const list = document.querySelector('.review-list') as HTMLElement;
+		const workbench = document.querySelector('.shell-workbench') as HTMLElement;
+		return {
+			panel: panel.clientHeight,
+			list: list.clientHeight,
+			workbenchTop: workbench.scrollTop,
+		};
+	});
+	expect(sizes.list).toBeGreaterThan(0);
+	expect(sizes.list).toBeLessThanOrEqual(sizes.panel * 0.34);
+	expect(sizes.workbenchTop).toBe(0);
+});
+
+test('SP-09 GIT-07 file arrows swap the diff without leaving the list and restore each file draft and range', async () => {
+	await start();
+	writeFileSync(path.join(project, 'README.md'), '# demo\nreadme edit\n');
+	writeFileSync(path.join(project, 'src/a.ts'), 'export const a = 2;\n');
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	const list = page.getByRole('list', {name: 'changed files'});
+	const readme = list.getByRole('button', {name: /README\.md/});
+	const source = list.getByRole('button', {name: /src\/a\.ts/});
+	await readme.click();
+	await page.getByRole('option', {name: /added line 2: readme edit/}).click();
+	await page
+		.getByRole('form', {name: 'review comment'})
+		.getByRole('textbox')
+		.fill('readme draft');
+	await readme.focus();
+	await page.keyboard.press('ArrowDown');
+	await expect(source).toBeFocused();
+	await expect(
+		page.getByRole('listbox', {name: /unstaged changes in src\/a\.ts/}),
+	).toBeVisible();
+	await page
+		.getByRole('option', {name: /added line 1: export const a = 2;/})
+		.click();
+	await page
+		.getByRole('form', {name: 'review comment'})
+		.getByRole('textbox')
+		.fill('source draft');
+	await source.focus();
+	await page.keyboard.press('ArrowUp');
+	await expect(readme).toBeFocused();
+	await expect(
+		page.getByRole('form', {name: 'review comment'}).getByRole('textbox'),
+	).toHaveValue('readme draft');
+	await expect(
+		page
+			.getByRole('form', {name: 'review comment'})
+			.getByText('comment on README.md, line 2', {exact: true}),
+	).toBeVisible();
+});
+
+test('SP-08 GIT-04 long lines scroll horizontally and binary changes keep their metadata state', async () => {
+	await start();
+	const marker = 'FAKE_LONG_LINE_END_MARKER';
+	writeFileSync(
+		path.join(project, 'README.md'),
+		`# demo\n${'x'.repeat(500)}${marker}\n`,
+	);
+	put('data/blob.bin', Buffer.from([9, 0, 8, 1]));
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	const list = page.getByRole('list', {name: 'changed files'});
+	await list.getByRole('button', {name: /README\.md/}).click();
+	const lines = page.getByRole('listbox', {
+		name: /unstaged changes in README\.md/,
+	});
+	await expect(
+		lines.getByRole('option', {name: new RegExp(marker)}),
+	).toBeVisible();
+	const horizontal = await lines.evaluate(element => {
+		const before = element.scrollWidth > element.clientWidth;
+		element.scrollLeft = element.scrollWidth;
+		return {before, after: element.scrollLeft};
+	});
+	expect(horizontal.before).toBe(true);
+	expect(horizontal.after).toBeGreaterThan(0);
+	await list.getByRole('button', {name: /data\/blob\.bin/}).click();
+	await expect(page.getByText(/binary file/i)).toBeVisible();
+	await expect(page.getByRole('listbox')).toHaveCount(0);
+});
+
+test('SP-09 GIT-04 GIT-07 a 5,000-row diff stays virtual and comments use full-model coordinates', async () => {
+	await start();
+	const oldText = Array.from(
+		{length: 2_505},
+		(_, index) => `old line ${index + 1}`,
+	).join('\n');
+	const newText = Array.from(
+		{length: 2_505},
+		(_, index) => `new line ${index + 1}`,
+	).join('\n');
+	put('src/large.ts', `${oldText}\n`);
+	git('add', 'src/large.ts');
+	git('commit', '-q', '-m', 'add large fake fixture');
+	put('src/large.ts', `${newText}\n`);
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	const lines = page.getByRole('listbox', {
+		name: /unstaged changes in src\/large\.ts/,
+	});
+	await expect(lines).toBeVisible();
+	await expect(lines.getByRole('option').first()).toHaveAttribute(
+		'aria-setsize',
+		'5000',
+	);
+	await expect.poll(() => lines.getByRole('option').count()).toBeLessThan(80);
+	await expect(lines.locator('[aria-posinset="5000"]')).toHaveCount(0);
+	await expect(page.getByText('15 more lines not shown.')).toBeVisible();
+	writeFileSync(path.join(project, 'README.md'), '# demo\nsecond change\n');
+	writeFileSync(path.join(project, 'src/a.ts'), 'export const a = 2;\n');
+	put('notes.txt', 'fourth change\n');
+	const changedFiles = page.getByRole('list', {name: 'changed files'});
+	await expect(changedFiles.getByRole('listitem')).toHaveCount(4);
+	expect((await changedFiles.boundingBox())?.height ?? 0).toBeGreaterThan(40);
+	await lines.locator('[aria-posinset="6"]').focus();
+	await page.keyboard.press('End');
+	const last = lines.locator('[aria-posinset="5000"]');
+	await expect(last).toBeFocused();
+	await expect(last).toHaveAttribute('aria-posinset', '5000');
+	await expect(last).toHaveAttribute('aria-setsize', '5000');
+	await expect(last).toHaveAccessibleName(/added line 2490: new line 2490/);
+	expect(await lines.getByRole('option').count()).toBeLessThan(80);
+	await expect(lines.locator('[aria-posinset="5001"]')).toHaveCount(0);
+	await expect(lines.getByRole('option', {name: /new line 2491/})).toHaveCount(
+		0,
+	);
+	await page.keyboard.press('Home');
+	await page.keyboard.press('Shift+End');
+	const form = page.getByRole('form', {name: 'review comment'});
+	await expect(form.getByText(/lines 1 to 2505/)).toBeVisible();
+	const submit = form.getByRole('button', {name: 'add to next message'});
+	await submit.scrollIntoViewIfNeeded();
+	expect(
+		await submit.evaluate(element => {
+			const rect = element.getBoundingClientRect();
+			const hit = document.elementFromPoint(
+				rect.x + rect.width / 2,
+				rect.y + rect.height / 2,
+			);
+			return hit === element || element.contains(hit);
+		}),
+	).toBe(true);
+	await form.getByRole('textbox').fill('fake full-range comment');
+	await expect(submit).toBeDisabled();
+	await expect(form.getByRole('alert')).toContainText('select a smaller range');
+	await form.getByRole('alert').scrollIntoViewIfNeeded();
+	await expect(form.getByRole('alert')).toBeInViewport();
+	await last.focus();
+	await lines.evaluate(element => {
+		element.scrollTop = 0;
+	});
+	await page.keyboard.press('Escape');
+	await expect(last).toBeFocused();
+	await page.keyboard.press('Home');
+	await page.keyboard.press('Shift+ArrowDown');
+	await expect(
+		form.getByText('comment on src/large.ts, lines 1 to 2', {exact: true}),
+	).toBeVisible();
+	await expect(submit).toBeEnabled();
+	await submit.click();
+	await expect(chips().getByText('src/large.ts:1-2 (comment)')).toBeVisible();
+	await send('review the bounded fake comment');
+	await expect(
+		page.getByText(
+			/comment received: Review comment on src\/large\.ts, lines 1-2/,
+		),
+	).toBeVisible();
+});
+
+test('GIT-04 review remains keyboard reachable above a maximised terminal', async () => {
+	await start();
+	put('README.md', '# demo\ncompact fake edit\n');
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	await page.getByRole('button', {name: 'open terminal', exact: true}).click();
+	await page.setViewportSize({width: 1240, height: 600});
+	const resize = page.getByRole('separator', {name: 'resize bottom panel'});
+	await resize.focus();
+	await page.keyboard.press('End');
+	const row = page.getByRole('option', {
+		name: /added line 2: compact fake edit/,
+	});
+	await row.focus();
+	await expect(row).toBeFocused();
+	await expect(row).toBeInViewport();
+	await row.press('Enter');
+	await expect(page.getByRole('form', {name: 'review comment'})).toHaveCount(1);
+});
+
+test('GIT-07 a one-line excerpt over the IPC character cap cannot attach', async () => {
+	await start();
+	put('README.md', `# demo\n${'x'.repeat(20_001)}\n`);
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	await page
+		.getByRole('listbox')
+		.getByRole('option', {name: /^added line 2:/})
+		.click();
+	const form = page.getByRole('form', {name: 'review comment'});
+	await form.getByRole('textbox').fill('fake oversized excerpt');
+	await expect(form.getByRole('alert')).toContainText('20,000 characters');
+	await expect(
+		form.getByRole('button', {name: 'add to next message'}),
+	).toBeDisabled();
+	await expect(chips()).toHaveCount(0);
+});
+
+test('GIT-07 drafts survive tabs while offscreen edits invalidate saved ranges', async () => {
+	await start();
+	put('README.md', '# demo\nreadme edit\n');
+	put('src/a.ts', 'export const a = 2;\n');
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	const list = page.getByRole('list', {name: 'changed files'});
+	const readme = list.getByRole('button', {name: /README\.md/});
+	const source = list.getByRole('button', {name: /src\/a\.ts/});
+	await readme.click();
+	await page.getByRole('option', {name: /added line 2: readme edit/}).click();
+	const form = page.getByRole('form', {name: 'review comment'});
+	await form.getByRole('textbox').fill('keep my fake draft');
+	await page.getByRole('tab', {name: 'files', exact: true}).click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	await expect(form.getByRole('textbox')).toHaveValue('keep my fake draft');
+	await source.click();
+	put('README.md', '# demo\ninserted above\nreadme edit\n');
+	await page
+		.getByRole('group', {name: 'filter changes'})
+		.getByRole('button', {name: 'refresh', exact: true})
+		.click();
+	await readme.click();
+	await expect(
+		page.getByRole('option', {name: /added line 3: readme edit/}),
+	).toBeVisible();
+	await expect(form).toHaveCount(0);
+	await page.getByRole('option', {name: /added line 3: readme edit/}).click();
+	await expect(form.getByRole('textbox')).toHaveValue('keep my fake draft');
+});
+
+test('GIT-03 mixed staged and unstaged files honour the active filter for click and arrows', async () => {
+	await start();
+	for (const name of ['README.md', 'src/a.ts']) {
+		put(name, 'staged fake line\n');
+		git('add', name);
+		put(name, 'unstaged fake line\n');
+	}
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	const filters = page.getByRole('group', {name: 'filter changes'});
+	await filters.getByRole('button', {name: 'staged', exact: true}).click();
+	const list = page.getByRole('list', {name: 'changed files'});
+	const first = list.getByRole('button').first();
+	await first.click();
+	await expect(page.getByRole('listbox')).toHaveAccessibleName(
+		/^staged changes in README/,
+	);
+	await first.focus();
+	await page.keyboard.press('ArrowDown');
+	await expect(list.getByRole('button').last()).toBeFocused();
+	await expect(page.getByRole('listbox')).toHaveAccessibleName(
+		/^staged changes in src/,
+	);
+	await filters.getByRole('button', {name: 'refresh', exact: true}).click();
+	await expect(page.getByRole('listbox')).toHaveAccessibleName(
+		/^staged changes in src/,
+	);
+});
+
+test('GIT-04 clean Files hydration does not consume the Review-open sole-change selection', async () => {
+	await start();
+	await openFiles();
+	put('README.md', '# demo\nafter files opened\n');
+	await page.getByRole('button', {name: 'refresh', exact: true}).click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	await expect(
+		page.getByRole('listbox', {name: /unstaged changes in README/}),
+	).toBeVisible();
+});
+
+test('GIT-07 same relative paths in different projects never share ranges or drafts', async () => {
+	await start();
+	put('README.md', '# demo\nfirst project edit\n');
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	await page
+		.getByRole('option', {name: /added line 2: first project edit/})
+		.click();
+	const form = page.getByRole('form', {name: 'review comment'});
+	await form.getByRole('textbox').fill('first project draft');
+	const second = path.join(work, 'second-project');
+	mkdirSync(second);
+	writeFileSync(path.join(second, '.fake-nanocoder'), 'files');
+	writeFileSync(path.join(second, 'README.md'), '# second\n');
+	execFileSync('git', ['-c', 'init.defaultBranch=main', 'init', '-q', second]);
+	execFileSync('git', ['-C', second, 'config', 'core.autocrlf', 'false']);
+	mkdirSync(path.join(second, '.git/info'), {recursive: true});
+	writeFileSync(path.join(second, '.git/info/exclude'), '.fake-nanocoder\n');
+	execFileSync('git', [
+		'-C',
+		second,
+		'-c',
+		'core.hooksPath=',
+		'add',
+		'README.md',
+	]);
+	execFileSync('git', [
+		'-C',
+		second,
+		'-c',
+		'core.hooksPath=',
+		'-c',
+		'user.name=Test',
+		'-c',
+		'user.email=test@example.com',
+		'commit',
+		'-qm',
+		'test: baseline',
+	]);
+	writeFileSync(
+		path.join(second, 'README.md'),
+		'# second\nsecond project edit\n',
+	);
+	await app.evaluate(({dialog}, folder) => {
+		dialog.showOpenDialog = (async () => ({
+			canceled: false,
+			filePaths: [folder],
+		})) as typeof dialog.showOpenDialog;
+	}, second);
+	await page.getByRole('button', {name: 'switch project', exact: true}).click();
+	await page.getByRole('button', {name: /add project folder/}).click();
+	await expect(
+		page.getByRole('option', {name: /added line 2: second project edit/}),
+	).toBeVisible();
+	await expect(form).toHaveCount(0);
+	await page
+		.getByRole('option', {name: /added line 2: second project edit/})
+		.click();
+	await form.getByRole('textbox').fill('second project draft');
+	await page.getByRole('button', {name: 'switch project', exact: true}).click();
+	await page.getByRole('button', {name: 'open project', exact: true}).click();
+	await expect(form.getByRole('textbox')).toHaveValue('first project draft');
+	await expect(
+		form.getByText('comment on README.md, line 2', {exact: true}),
+	).toBeVisible();
+});
+
+test('GIT-04 virtual scrolling preserves tab entry, DOM order and horizontal extent without a selection', async () => {
+	await start();
+	put(
+		'src/large.ts',
+		`fake long line ${'x'.repeat(800)}\n${Array.from({length: 1_000}, (_, index) => `fake line ${index}`).join('\n')}\n`,
+	);
+	await filesButton().click();
+	await page.getByRole('tab', {name: 'review'}).click();
+	const lines = page.getByRole('listbox');
+	await expect(lines).toBeVisible();
+	const width = await lines.evaluate(element => element.scrollWidth);
+	await lines.evaluate(element => {
+		element.scrollTop = element.scrollHeight;
+	});
+	await expect.poll(() => lines.getByRole('option').count()).toBeLessThan(80);
+	await expect(lines.locator('[tabindex="0"]')).toHaveCount(1);
+	expect(await lines.evaluate(element => element.scrollWidth)).toBe(width);
+	const order = await lines
+		.getByRole('option')
+		.evaluateAll(elements =>
+			elements.map(element => Number(element.getAttribute('aria-posinset'))),
+		);
+	expect(order).toEqual([...order].sort((a, b) => a - b));
+	await page.getByRole('button', {name: 'open in editor', exact: true}).focus();
+	await page.keyboard.press('Tab');
+	await expect(lines.locator('[tabindex="0"]')).toBeFocused();
 });
 
 test('GIT-13 a project that is not a Git repository shows review as unavailable while files still work', async () => {

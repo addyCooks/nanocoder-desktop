@@ -9,6 +9,7 @@ import {
 	chips,
 	clearAttachments,
 	labelFor,
+	MAX_ATTACHMENTS,
 	removeAttachment,
 } from '@/renderer/attachments';
 import {BackgroundProjects} from '@/renderer/background-projects';
@@ -214,7 +215,11 @@ export function App() {
 		currentProject?.trusted === true;
 	const inspectorOpen = browserTabOpen || filesTabOpen;
 	const files = useFiles(projectId, filesTabOpen);
-	const reviewPanel = useReview(projectId, filesTabOpen);
+	const reviewPanel = useReview(
+		projectId,
+		filesTabOpen,
+		inspector === 'review',
+	);
 	const browser = useBrowser(projectId);
 	const modalOpen = useModalOpen();
 	const [attachments, setAttachments] = useState<AttachmentStore>({});
@@ -229,7 +234,9 @@ export function App() {
 			? 'this thread is archived'
 			: thread.runState === 'view-only'
 				? 'this thread is view-only'
-				: null;
+				: attached.length >= MAX_ATTACHMENTS
+					? 'remove an attachment before adding another (20 maximum)'
+					: null;
 	const failed =
 		thread?.runState === 'failed' ||
 		(turn !== null && !turn.ok && thread?.runState !== 'ready');
