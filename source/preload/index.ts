@@ -120,6 +120,8 @@ const api: DesktopApi = {
 		ipcRenderer.invoke(CHANNELS.discoverSessions, request),
 	importSession: request => ipcRenderer.invoke(CHANNELS.importSession, request),
 	getAppInfo: () => ipcRenderer.invoke(CHANNELS.getAppInfo, {}),
+	writeClipboard: request =>
+		ipcRenderer.invoke(CHANNELS.writeClipboard, request),
 	getNanocoderRuntime: () =>
 		ipcRenderer.invoke(CHANNELS.getNanocoderRuntime, {}),
 	connectNanocoder: () => ipcRenderer.invoke(CHANNELS.connectNanocoder, {}),

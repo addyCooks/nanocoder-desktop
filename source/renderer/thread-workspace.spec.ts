@@ -268,7 +268,7 @@ test('CHAT-08 complete waits for the exact snapshot prefix and synchronous rende
 	);
 	await prefix.promise;
 	await Promise.resolve();
-	t.deepEqual(model.getState().conversation.transcript.items, [
+	t.like(model.getState().conversation.transcript.items, [
 		{kind: 'user', text: 'restored prefix'},
 	]);
 	const enabled = changes.filter(

@@ -8,7 +8,13 @@
 
 .conversation-stream .gate-transcript {
 	gap: 18px;
+	min-width: 0;
 	white-space: normal;
+}
+
+.conversation-stream .gate-transcript > li,
+.stream-markdown {
+	min-width: 0;
 }
 
 .stream-day-label {
@@ -31,6 +37,50 @@
 
 .stream-author-agent {
 	color: var(--colors-on-surface-muted);
+}
+
+.stream-message-actions {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: var(--spacing-xs);
+}
+
+.stream-copy {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--spacing-xs);
+	min-height: 28px;
+	padding: var(--spacing-xxs) var(--spacing-sm);
+	border: 1px solid var(--colors-stroke);
+	border-radius: var(--rounded-md);
+	background: var(--colors-surface-panel);
+	color: var(--colors-on-surface-muted);
+	font: inherit;
+	font-size: var(--typography-meta-font-size);
+	cursor: pointer;
+}
+
+.stream-copy:hover,
+.stream-copy:focus-visible {
+	color: var(--colors-on-surface);
+	background: var(--colors-surface-elevated);
+}
+
+.stream-code-block {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	align-items: stretch;
+	gap: var(--spacing-xs);
+}
+
+.stream-code-block pre {
+	margin: 0;
+}
+
+.stream-code-copy {
+	align-self: flex-end;
+	background: var(--colors-surface-elevated);
 }
 
 .stream-time {

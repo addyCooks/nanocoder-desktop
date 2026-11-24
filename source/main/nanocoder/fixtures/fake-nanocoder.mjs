@@ -480,7 +480,7 @@ async function streamFixture(id, sessionId) {
 	});
 	say(
 		sessionId,
-		'# streamed fixture\n\n[fixture link](https://fixture.invalid) ![fixture image](https://fixture.invalid/image)\n\n<script>fixture</script>\n\n',
+		'# streamed fixture\n\n[fixture link](https://fixture.invalid) ![fixture image](https://fixture.invalid/image)\n\n<script>fixture</script>\n\n```ts\nconst fakeFixture = 67;\n```\n\n',
 	);
 	await new Promise(resolve => {
 		let index = 0;

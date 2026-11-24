@@ -4,7 +4,6 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {toTurnEvent} from '@/main/nanocoder/turn-events';
 import {ConversationStream} from '@/renderer/conversation-stream';
 import {
-	addUserMessage,
 	applyEvent,
 	emptyTranscript,
 	settleSubagentTurn,
@@ -111,7 +110,7 @@ test('SUB-01 tool IDs are scoped to their turn and late running updates do not r
 		title: 'late progress',
 	});
 	t.is(state.items[0], settled);
-	state = addUserMessage(state, 'new fixture turn');
+	state = applyEvent(state, {type: 'user', text: 'new fixture turn'});
 	state = applyEvent(state, delegation());
 	t.is(state.items.length, 3);
 	t.is(state.items[0], settled);
@@ -126,13 +125,16 @@ test('SUB-01 reused tool IDs retain independent rows and details across turns', 
 		details: {content: ['first fixture detail']},
 	});
 	const previous = first.items[0];
-	const next = applyEvent(addUserMessage(first, 'next fixture turn'), {
-		type: 'tool',
-		id: 'reused-call',
-		title: 'second fixture tool',
-		status: 'completed',
-		details: {content: ['second fixture detail']},
-	});
+	const next = applyEvent(
+		applyEvent(first, {type: 'user', text: 'next fixture turn'}),
+		{
+			type: 'tool',
+			id: 'reused-call',
+			title: 'second fixture tool',
+			status: 'completed',
+			details: {content: ['second fixture detail']},
+		},
+	);
 	t.is(next.items.length, 3);
 	t.is(next.items[0], previous);
 	t.deepEqual(
@@ -248,7 +250,10 @@ test('SUB-04 known interrupted cards keep their outcome when another turn starts
 		applyEvent(emptyTranscript, delegation()),
 		'cancelled',
 	);
-	const state = applyEvent(addUserMessage(settled, 'next turn'), delegation());
+	const state = applyEvent(
+		applyEvent(settled, {type: 'user', text: 'next turn'}),
+		delegation(),
+	);
 	const html = renderToStaticMarkup(
 		createElement(ConversationStream, {transcript: state, running: true}),
 	);

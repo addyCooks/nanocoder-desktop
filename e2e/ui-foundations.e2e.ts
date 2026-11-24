@@ -313,6 +313,7 @@ test('approval parts have named actions and no new contrast gaps in either theme
 		page.getByRole('button', {name: /^switch to (light|dark) theme$/}),
 		page.getByRole('button', {name: 'command palette', exact: true}),
 		page.getByRole('region', {name: 'conversation', exact: true}),
+		...(await page.getByRole('button', {name: 'copy text', exact: true}).all()),
 		card.getByRole('button', {name: 'Allow', exact: true}),
 		card.getByRole('button', {name: 'Deny', exact: true}),
 		page.getByRole('button', {name: 'cancel turn', exact: true}),

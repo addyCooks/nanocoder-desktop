@@ -1,5 +1,7 @@
 # Streaming conversation
 
+- Last updated: 2026-11-24
+
 Phase 1.6 and U.4 implement `CHAT-05`, `ACP-12`, `CHAT-19`, `CHAT-20` and `PERF-04`. `DEC-39` remains proposed.
 
 ## Update boundary
@@ -34,6 +36,16 @@ Replayed history and restarted sessions show no time. The day label takes its ti
 
 Finished reasoning uses a native keyboard disclosure; live reasoning remains expanded. Routine completed tool details fold, while failed/cancelled results start expanded. No events are grouped, removed or reordered. Larger reading rows and dense detail use the approved tokens. Model/mode controls precede send in both visual and keyboard order. Project-default and alwaysAllow detail remains inspectable in a disclosure; refusal reasons and pending mode stay visible. Disabled controls retain full-opacity readable ink.
 
+## Follow and copy
+
+`AppShell` owns follow state separately from stream batching. It starts each project/thread scope at the end and follows transcript changes only while the reader is within two CSS pixels of the bottom. Resize observation keeps follow through viewport, content and footer size changes without treating them as reader intent. Scrolling away releases follow without changing the reader's position and exposes a named `latest` button outside the scrolling content. Activating it returns to the end and resumes following. Pointer activation does not take focus from the composer; keyboard activation and End return focus to the conversation region. Returning to the bottom by any route also resumes following.
+
+`transcriptRowId` prefers reported tool, plan and message IDs. Id-less live messages keep a renderer-only fallback identity across chunks. Snapshot reconstruction carries that identity only at the same structural position with matching kind, reported ID and full text, including repeated identical messages at distinct positions. Different content receives a new content-sensitive fallback. `ConversationStream` still remounts for a different project/thread. These identities and follow positions stay in memory and are not new persisted message metadata.
+
+User and assistant `copy text` actions write the original `TranscriptItem.text`, not rendered HTML, attachment summaries or announcement previews. A fenced-code action writes its source text, preserving line endings and excluding fence markers and language labels. Inline, indented and empty code has no copy action. Empty text does not change the clipboard; oversized text gets a bounded-limit notice before IPC. A successful action emits one `copied` toast through the existing queue, and a later copy replaces the operating system clipboard. Failures show a generic refusal with no copied content. Native Tab order includes the copy buttons before the approval shelf and composer.
+
+The built Linux Electron probe did not complete `navigator.clipboard.writeText` under `app://`. The write therefore uses only `clipboard:write-text`: a trusted-main-frame, strict-object IPC request bounded to 1,000,000 code units, answered by main through Electron's clipboard API. There is no clipboard-read bridge, and main returns a generic failure without logging the text or underlying error. Scroll offsets, row identities and copied text are never written to desktop storage or logs. User gestures belong to the UI interaction, not the IPC sender or schema validation.
+
 ## Polite stream announcements
 
 `stream-announcements.tsx` implements `A11Y-04` and `A11Y-05` outside the transcript list. Its polite, atomic live node announces started, waiting for approval, completed, failed, cancelled and interrupted states. Completed agent messages get a plain-text preview of at most 160 Unicode characters, including an ellipsis when needed. Preview work reads at most 4,000 input code units and omits code fences, inline code, Markdown link targets and HTML tags. Reasoning, tool rows, permission details and token chunks are never announcement inputs.
@@ -55,6 +67,10 @@ Slash suggestions come only from `available_commands_update`. Selecting one inse
 Unit tests cover mapping, patch semantics, metadata projection/refusal, project/thread usage ownership, batching cancellation and Markdown resource/navigation refusal. The retired legacy event channel is absent from preload; built-app tests prove literal legacy events cannot change the transcript. Built-app tests use fake content and a fresh `--user-data-dir`, never a real provider or conversation.
 
 `e2e/streaming.e2e.ts` drives a monotonic fake stream, asserts the achieved rate is at least 100 updates/sec and measures maximum input-to-frame, scroll-to-frame, frame gap and MessageChannel event-loop delay against 100ms. It checks ordered content, memory-only drafts, native disclosure keyboard focus, reduced-motion cursor/spinner, both themes and 1240/1020/840 widths. Condition/event waits replace fixed sleeps.
+
+Issue #67's Linux Instabox run on 19 November 2026 passed all three `streaming.e2e.ts` tests. `PERF-04` measured 105.09 updates/sec over 300 updates, with 184 frame samples and 20 input and scroll samples. Median/p95 frame gaps were 16.7/16.8ms, input-to-frame 10.5/18.5ms and scroll-to-frame 7.8/15.7ms; maximum event-loop delay was 8.2ms. Every gate remained below 100ms. The same run proved bottom-only following, pointer and keyboard `latest`, stable rows across appends and thread switches, exact user/assistant/fence clipboard replacement and one success toast per action.
+
+The 24 November 2026 Linux Instabox review-fix run passed 96 affected built-app tests, with the macOS-only close/reopen test skipped. The four streaming tests include viewport resizing, terminal opening, composer growth, approval-shelf appearance, End focus return and long fenced code scrolled horizontally at 1240/840px. Automated clipboard writes are stubbed in Electron main; the separate visible built-app run used the real clipboard and native Ctrl+V with fake text only. `PERF-04` measured 104.89 updates/sec over 300 updates, 163 frame samples and 20 input and scroll samples. Input median/p95 was 6.3/16.4ms, scroll 4.0/16.9ms and frame gap 16.7/16.8ms; maximum event-loop delay was 13.1ms. All gates stayed below 100ms. These Linux results do not prove macOS/Windows native focus or manual screen-reader acceptance.
 
 The stream-announcement unit tests use injected time and frame callbacks, without sleeps. The dedicated built-app tests check native-dialog moves in Chromium's accessibility tree, focus retention, approval-count ownership and terminal outcomes. The `PERF-04` stream probe also limits announcement writes during its 300 updates. Full platform screen-reader acceptance, including VoiceOver's handling of native-dialog moves, still needs the manual protocol.
 

@@ -2326,6 +2326,36 @@ test('SUB-05 failed structural read clears cached preparation before retrying th
 	f.store.threadHistory.read = read;
 });
 
+test('CHAT-16 user text remains separate from transient attachment display summaries', async t => {
+	const f = await fixture(t, true, undefined, false, {
+		resolveAttachments: async () => ({
+			blocks: [],
+			summary: ['attached: fixture.ts'],
+		}),
+	});
+	const thread = await f.service.createThread({projectId: f.project.id});
+	await f.supervisor.ensureProcess(f.project);
+	f.supervisor.getConnection(f.project.id).prompt = async (_id, text) => {
+		t.is(text, 'original fixture');
+		return {stopReason: 'end_turn'};
+	};
+	await f.service.promptThread({
+		projectId: f.project.id,
+		threadId: thread.id,
+		text: 'original fixture',
+		attachments: [{kind: 'file', path: 'fixture.ts'}],
+	});
+	const snapshot = await f.service.getThreadSnapshot({
+		projectId: f.project.id,
+		threadId: thread.id,
+	});
+	t.like(snapshot.events[0], {
+		type: 'user',
+		text: 'original fixture',
+		attachmentSummary: ['attached: fixture.ts'],
+	});
+});
+
 async function fixture(
 	t: ExecutionContext,
 	enableRuntime = false,
@@ -2338,6 +2368,7 @@ async function fixture(
 		| 'beforeFirstPrompt'
 		| 'resolveLiveMode'
 		| 'validateBeforePrepare'
+		| 'resolveAttachments'
 	> = {},
 ) {
 	const root = realpathSync.native(

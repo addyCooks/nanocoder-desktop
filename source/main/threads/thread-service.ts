@@ -1796,9 +1796,10 @@ export function createThreadService(
 						append(thread, [
 							{
 								type: 'user',
-								text: attached?.summary.length
-									? `${request.text}\n\n${attached.summary.join('\n')}`
-									: request.text,
+								text: request.text,
+								...(attached?.summary.length
+									? {attachmentSummary: attached.summary}
+									: {}),
 							},
 						]);
 						const result = await options.supervisor.prompt(

@@ -3,6 +3,7 @@ import {
 	createThreadConversations,
 	type ThreadConversationState,
 } from '@/renderer/thread-conversations';
+import {transcriptRowId} from '@/renderer/transcript';
 import type {
 	IpcResult,
 	ProjectEvent,
@@ -70,6 +71,34 @@ function fixture(
 	conversations.selectThread('a');
 	return {conversations, changes, timers};
 }
+
+test('CHAT-08 snapshots retain matching live row identities despite different chunk boundaries', t => {
+	const {conversations, timers} = fixture();
+	conversations.receive(
+		turn([
+			{type: 'user', text: 'fixture'},
+			{type: 'text', text: 'first '},
+			{type: 'text', text: 'answer'},
+		]),
+	);
+	timers
+		.filter(timer => !timer.cancelled)
+		.at(-1)
+		?.callback();
+	const previous = conversations
+		.getState()
+		.transcript.items.map(transcriptRowId);
+	conversations.snapshot(
+		snapshot('a', [
+			{type: 'user', text: 'fixture'},
+			{type: 'text', text: 'first answer'},
+		]),
+	);
+	t.deepEqual(
+		conversations.getState().transcript.items.map(transcriptRowId),
+		previous,
+	);
+});
 
 test('drafts and completed outcomes are thread-owned and a pending draft never becomes an optimistic or queued prompt (CHAT-03, CHAT-04, DATA-10)', t => {
 	const {conversations} = fixture();
@@ -232,7 +261,7 @@ test('replay replaces a flushed prefix without duplicate old chunks and retains 
 			]),
 		),
 	);
-	t.deepEqual(conversations.getState().transcript.items, [
+	t.like(conversations.getState().transcript.items, [
 		{kind: 'user', text: 'earlier'},
 		{kind: 'agent', text: 'history from main'},
 		{kind: 'failure', text: 'failed turn'},

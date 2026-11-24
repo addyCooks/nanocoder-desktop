@@ -26,11 +26,13 @@ export type IpcResult<T> = {ok: true; value: T} | {ok: false; error: IpcError};
 // The longest message the main process accepts. The composer refuses a longer draft
 // before it is sent, so the limit is not met as an "Invalid request" that fails the turn.
 export const MAX_PROMPT_LENGTH = 100_000;
+export const MAX_CLIPBOARD_LENGTH = 1_000_000;
 export const MAX_REVIEW_LINE_SPAN = 2_000;
 export const MAX_REVIEW_EXCERPT = 20_000;
 
 export const CHANNELS = {
 	getAppInfo: 'app:get-info',
+	writeClipboard: 'clipboard:write-text',
 	getNanocoderRuntime: 'nanocoder:get-runtime',
 	connectNanocoder: 'nanocoder:connect',
 	getSettings: 'store:get-settings',
@@ -191,7 +193,12 @@ export interface StreamConfigOption {
 }
 
 export type TurnEvent = (
-	| {type: 'user'; text: string; messageId?: string}
+	| {
+			type: 'user';
+			text: string;
+			messageId?: string;
+			attachmentSummary?: string[];
+	  }
 	| {type: 'text'; text: string; messageId?: string}
 	| {type: 'thought'; text: string; messageId?: string}
 	| {type: 'commands'; commands: StreamCommand[]}

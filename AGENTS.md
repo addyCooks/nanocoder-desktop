@@ -28,6 +28,7 @@ Details are in [`planning/architecture.md`](planning/architecture.md); the secur
 | `source/main/security.ts` | Origin checks, renderer file resolution, Content Security Policy |
 | `source/main/paths.ts` | Shared native realpath canonicalisation (symlinks and volume case aliases) and component containment |
 | `source/main/ipc/handle-request.ts` | Sender check, schema validation and the result shape for every IPC call |
+| `source/main/ipc/clipboard.ts`, `source/renderer/copy-content.ts` | Strict write-only bounded clipboard IPC and original-text copy/refusal projection; no clipboard-read bridge |
 | `source/main/ipc/index.ts` | Registers the IPC handlers |
 | `source/main/terminal/`, `source/main/ipc/terminal.ts`, `source/shared/terminal.ts` | Isolated utility-process PTY, main-owned active-project lifecycle, bounded memory-only output and strict typed terminal IPC (`TERM-01` to `TERM-10`) |
 | `source/main/terminal/agent-command.ts` | Passive bounded last-command and accepted-option display projection (`TERM-12`), never a terminal or permission capability |
@@ -105,6 +106,7 @@ Details are in [`planning/architecture.md`](planning/architecture.md); the secur
 | `source/main/threads/thread-history-observer.ts` | Scoped atomic live/replay observation, disposable staging, strict slot/epoch guards and post-commit-only observer activation |
 | `source/main/threads/thread-history-mapping.ts`, `source/main/threads/thread-live-mapping.ts`, `source/main/threads/thread-sequence.ts`, `planning/durable-replay.md` | Structural replay and live identities through one main-only batch allocator, bounded session replay and opaque readiness gates |
 | `source/renderer/transcript.ts`, `source/renderer/stream-batcher.ts` | Ordered immutable transcript patches and cancellable 16ms renderer batching |
+| `source/renderer/transcript-follow.ts` | Memory-only thread-scoped follow state; `AppShell` observes content and viewport resizing and keeps reader scroll intent separate |
 | `source/renderer/conversation-stream.tsx`, `source/renderer/agent-markdown.tsx`, `source/renderer/stream-commands.tsx` | U.4 stream rows, isolated inert Markdown and advertised-command draft suggestions |
 | `source/renderer/stream-announcements.tsx` | A11Y-04/05 clock-injected lifecycle/finished-response speech and one persistent modal-aware polite live node |
 | `source/renderer/composer.tsx`, `source/renderer/project-controls.ts`, `source/renderer/use-project-controls.ts` | Mounted multiline composer, native mode/default disclosure and scoped acknowledged project-control state; no renderer live-mode cache |

@@ -3,7 +3,7 @@
 The threat model, trust boundaries and security rules for Nanocoder Desktop, including the browser-to-agent boundary and signing.
 
 - Status: Draft
-- Last updated: 2026-11-04
+- Last updated: 2026-11-24
 - Drafted by: @akramcodez
 
 ## Why this matters here
@@ -96,6 +96,10 @@ flowchart LR
 | SEC-18 | Dependencies pass `pnpm audit`, Semgrep and CodeQL in CI, the lockfile is frozen, Electron is pinned to an exact version, and GitHub Actions are pinned by commit SHA. | Decided (audit, Semgrep, CodeQL: [Project infrastructure][infra]); pinning is Suggestion (not discussed) |
 | SEC-19 | (Built in phase 4.2.) Electron fuses are reviewed and set at packaging time. Any fuse left on is documented with its reason. With the bundled Node sidecar (`DEC-38`), the shipped build turns `runAsNode`, `nodeOptions` and `nodeCliInspect` off, and a packaged-build test fails if any is on. Playwright needs `nodeCliInspect` on, so end-to-end tests use a test build with that fuse on ([#3](https://github.com/Nano-Collective/nanocoder-desktop/issues/3), [#2](https://github.com/Nano-Collective/nanocoder-desktop/issues/2)). | Suggestion (not discussed), from [Electron security guidance][el-security] item 19 and [fuses][el-fuses] |
 | SEC-20 | ACP client callbacks get least privilege: root-checked text reads only, no writes, no terminal, and no reads of files the user excluded. | Decided ([whitepaper, Why ACP][wp-why]) |
+
+## Clipboard writes
+
+Issue #67 adds one write-only `clipboard:write-text` IPC method for message and fenced-code copy actions. It accepts a strict object containing only a non-empty string of at most 1,000,000 code units, and `SEC-02` checks the trusted app main frame before parsing it. Main writes through Electron's clipboard API and returns a generic failure without logging copied text or the underlying error. There is no renderer clipboard-read bridge. The UI invokes the method from explicit copy controls; IPC validates the sender and payload but does not prove a user gesture. Copied content, scroll offsets and renderer-only row identities are never persisted or logged by the desktop.
 
 ## Browser-to-agent trust boundary
 

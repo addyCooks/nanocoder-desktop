@@ -16,6 +16,7 @@ import {BackgroundProjects} from '@/renderer/background-projects';
 import {BrowserPanel} from '@/renderer/browser-panel';
 import {Composer} from '@/renderer/composer';
 import {ConversationStream} from '@/renderer/conversation-stream';
+import {copyContent} from '@/renderer/copy-content';
 import {Icon} from '@/renderer/icons';
 import {
 	commandModifier,
@@ -436,6 +437,16 @@ export function App() {
 		setAttachments(current => addAttachment(current, attachKey, item));
 		overlays.current?.notify(`attached ${labelFor(item)} to your next message`);
 	};
+	const copy = useCallback((text: string) => {
+		void copyContent(
+			text,
+			async value => {
+				const result = await window.desktop.writeClipboard({text: value});
+				if (!result.ok) throw new Error('clipboard unavailable');
+			},
+			message => overlays.current?.notify(message),
+		);
+	}, []);
 	const openInBrowser = (url: string) => {
 		showPanel('browser');
 		void browser.open(url);
@@ -1010,6 +1021,10 @@ export function App() {
 				composerPlacement={
 					centredComposer && !importOpen ? 'centred' : 'bottom'
 				}
+				followKey={
+					thread && !importOpen ? `${projectId ?? ''}:${thread.id}` : undefined
+				}
+				followContent={transcript.items}
 				approvalShelf={
 					thread && (
 						<ApprovalRequests
@@ -1124,6 +1139,7 @@ export function App() {
 						}
 						running={sending}
 						onOpenLocalUrl={openInBrowser}
+						onCopy={copy}
 						onStopTurn={cancel}
 						stopping={stopping}
 						stopReason={turn?.ok ? turn.value.stopReason : undefined}
