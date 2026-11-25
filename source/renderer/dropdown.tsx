@@ -112,6 +112,7 @@ export function Dropdown(props: DropdownProps) {
 	);
 	const [active, setActive] = React.useState(selected);
 	const root = React.useRef<HTMLDivElement>(null);
+	const list = React.useRef<HTMLUListElement>(null);
 	const id = React.useId();
 	const listId = `${id}-list`;
 	const optionId = (index: number) => `${id}-option-${index}`;
@@ -139,6 +140,12 @@ export function Dropdown(props: DropdownProps) {
 	React.useEffect(() => {
 		if (props.disabled) setOpen(false);
 	}, [props.disabled]);
+
+	// A list taller than its window scrolls the active option into view.
+	React.useEffect(() => {
+		if (open)
+			list.current?.children[active]?.scrollIntoView({block: 'nearest'});
+	}, [open, active]);
 
 	const show = () => {
 		const rect = trigger.current?.getBoundingClientRect();
@@ -236,6 +243,7 @@ export function Dropdown(props: DropdownProps) {
 				<span className="dropdown-value">{current?.label ?? props.value}</span>
 			</button>
 			<ul
+				ref={list}
 				id={listId}
 				role="listbox"
 				className="dropdown-list"
