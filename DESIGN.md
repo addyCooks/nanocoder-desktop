@@ -314,7 +314,7 @@ components:
 How Nanocoder Desktop looks. Behaviour, authority and accessibility requirements remain in [`planning/`](planning/index.md).
 
 - Status: Approved by the user as designer, 31 October 2026 (`DEC-40`). Where the approved mockup and this file disagreed, the mockup won and this file was updated (`DEC-41`).
-- Last updated: 2026-10-31
+- Last updated: 2026-11-24
 - Source: [UI exploration][mockup], revision 4, main direction only. Alternatives and anything labelled new idea or later are not implementation scope.
 - Format: [DESIGN.md alpha][spec]. Front-matter tokens are normative; generated CSS is never edited by hand.
 
@@ -384,7 +384,7 @@ A compact full-height sidebar beside the conversation canvas. The title bar belo
 - Workbench: an optional right slot for later files/review/browser tools. It is absent when unused. At 840px and below an open workbench owns the conversation canvas and has an explicit back-to-chat action, while project navigation remains reachable.
 - Bottom area: optional terminal slot, absent when unused. No Milestone 2 or 3 controls ship as part of this overhaul.
 
-Reference sidebar widths are 260px wide, 232px at 1050 and 212px at 840. The sidebar, the right workbench and the bottom terminal can each be resized by dragging their inner edge or with the arrow keys on that edge (a labelled separator); double-click or Enter restores the default, and the chosen sizes are kept on this device only. The sidebar stays between 180px and 420px, the workbench opens at 42% of the space beside the sidebar (720px at most) and leaves at least 420px for the conversation, and the bottom panel stays between 160px and three quarters of the window. Reading-region horizontal padding is 40px, 30px and 24px. Do not squeeze three reading surfaces together at narrow widths. The window cannot be made narrower than 640px, because below about 560px the header actions leave it. A long project name is cut with an ellipsis in the header.
+Reference sidebar widths are 260px wide, 232px at 1050 and 212px at 840. The sidebar, the right workbench and the bottom terminal can each be resized by dragging their inner edge or with the arrow keys on that edge (a labelled separator); double-click or Enter restores the default, and the chosen sizes are kept on this device only. The sidebar stays between 180px and 420px, the workbench opens at 42% of the space beside the sidebar (720px at most) and leaves at least 420px for the conversation, and the bottom panel stays between 160px and three quarters of the window. A saved size outside these limits is brought back inside them. Reading-region horizontal padding is 40px, 30px and 24px. Do not squeeze three reading surfaces together at narrow widths. The window cannot be made narrower than 640px, because below about 560px the header actions leave it. A long project name is cut with an ellipsis in the header.
 
 Browser placement in the right workbench is the approved visual direction only. Browser capabilities and any upstream whitepaper placement change remain with Milestone 3; this change builds no browser.
 

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {Icon} from '@/renderer/icons';
-import {ResizeHandle, usePanelSizes} from '@/renderer/resize-handle';
+import {clampSize, ResizeHandle, usePanelSizes} from '@/renderer/resize-handle';
 import {initialFollowState, reduceFollow} from '@/renderer/transcript-follow';
 import {Button} from '@/renderer/ui';
 
@@ -129,26 +129,25 @@ export function AppShell({
 		(!follow.following || latestFocused);
 	const [sizes, setSize] = usePanelSizes();
 	const viewport = useViewport();
-	const rail = sizes.rail ?? defaults.rail;
+	// A saved size is kept between the limits the handles use, so a stored 1 cannot hide a panel.
 	const railMax = Math.min(420, viewport.width - 480);
+	const rail = sizes.rail ? clampSize(sizes.rail, 180, railMax) : defaults.rail;
 	const workbenchDefault = Math.min(
 		720,
 		Math.round((viewport.width - rail) * 0.42),
 	);
-	const workbenchSize = sizes.workbench ?? workbenchDefault;
 	const workbenchMax = viewport.width - rail - 420;
-	const bottom = sizes.bottom ?? defaults.bottom;
+	const workbenchSize = sizes.workbench
+		? clampSize(sizes.workbench, 280, workbenchMax)
+		: workbenchDefault;
 	const bottomMax = Math.round(viewport.height * 0.75);
+	const bottom = sizes.bottom
+		? clampSize(sizes.bottom, 160, bottomMax)
+		: defaults.bottom;
 	const style = {
-		...(sizes.rail && {
-			'--shell-rail-width': `${Math.min(rail, Math.max(180, railMax))}px`,
-		}),
-		...(sizes.workbench && {
-			'--shell-workbench-width': `${Math.min(workbenchSize, Math.max(280, workbenchMax))}px`,
-		}),
-		...(sizes.bottom && {
-			'--shell-bottom-height': `${Math.min(bottom, bottomMax)}px`,
-		}),
+		...(sizes.rail && {'--shell-rail-width': `${rail}px`}),
+		...(sizes.workbench && {'--shell-workbench-width': `${workbenchSize}px`}),
+		...(sizes.bottom && {'--shell-bottom-height': `${bottom}px`}),
 	} as React.CSSProperties;
 	return (
 		<div className="app-shell" style={style}>

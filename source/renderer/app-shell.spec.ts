@@ -129,3 +129,40 @@ test('later workbench and bottom slots preserve plain children with an explicit 
 	t.true(html.includes('data-shell-slot="bottom-panel"'));
 	t.true(html.includes('terminal fixture'));
 });
+
+test.serial(
+	'saved panel sizes are kept between the minimum and maximum the handles use (R2-02)',
+	t => {
+		const render = (saved: unknown) => {
+			Object.assign(globalThis, {
+				localStorage: {getItem: () => JSON.stringify(saved), setItem() {}},
+			});
+			return renderToStaticMarkup(
+				createElement(AppShell, {
+					title: 'Nanocoder',
+					statusBadges: null,
+					children: null,
+				}),
+			);
+		};
+		try {
+			// A viewport of 1280 by 800 gives the rail 180 to 420, the workbench 280 to 440 and the bottom 160 to 600.
+			const small = render({rail: 1, workbench: 1, bottom: 1});
+			t.true(small.includes('--shell-rail-width:180px'));
+			t.true(small.includes('--shell-workbench-width:280px'));
+			t.true(small.includes('--shell-bottom-height:160px'));
+			t.regex(small, /aria-label="resize sidebar"[^>]*aria-valuenow="180"/);
+			const large = render({rail: 99999, workbench: 99999, bottom: 99999});
+			t.true(large.includes('--shell-rail-width:420px'));
+			t.true(large.includes('--shell-workbench-width:440px'));
+			t.true(large.includes('--shell-bottom-height:600px'));
+			const ordinary = render({rail: 300, workbench: 400, bottom: 400});
+			t.true(ordinary.includes('--shell-rail-width:300px'));
+			t.true(ordinary.includes('--shell-workbench-width:400px'));
+			t.true(ordinary.includes('--shell-bottom-height:400px'));
+			t.false(render({}).includes('--shell-rail-width'));
+		} finally {
+			Reflect.deleteProperty(globalThis, 'localStorage');
+		}
+	},
+);
