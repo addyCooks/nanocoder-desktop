@@ -1,7 +1,12 @@
 import test from 'ava';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {Dropdown, nextIndex, placeList} from '@/renderer/dropdown';
+import {
+	Dropdown,
+	nextIndex,
+	placeList,
+	typeAheadIndex,
+} from '@/renderer/dropdown';
 
 const options = [
 	{value: 'normal', label: 'normal'},
@@ -49,6 +54,24 @@ test('arrow, home and end keys stay within the options', t => {
 	t.is(nextIndex(0, 'End', 3), 2);
 	t.is(nextIndex(0, 'a', 3), null);
 	t.is(nextIndex(0, 'ArrowDown', 0), null);
+});
+
+test('typing finds the option that starts with the letters, wrapping and ignoring case (R2-03)', t => {
+	const labels = ['normal', 'auto-accept', 'yolo', 'plan', 'architect'];
+	t.is(typeAheadIndex(labels, 0, 'p'), 3);
+	t.is(typeAheadIndex(labels, 0, 'P'), 3);
+	// One letter moves to the next option with it, then wraps, and typing it again cycles.
+	t.is(typeAheadIndex(labels, 0, 'a'), 1);
+	t.is(typeAheadIndex(labels, 1, 'a'), 4);
+	t.is(typeAheadIndex(labels, 4, 'a'), 1);
+	t.is(typeAheadIndex(labels, 1, 'aa'), 4);
+	// Several different letters refine the search from the current option.
+	t.is(typeAheadIndex(labels, 1, 'ar'), 4);
+	t.is(typeAheadIndex(labels, 4, 'au'), 1);
+	t.is(typeAheadIndex(labels, 0, 'n'), 0);
+	t.is(typeAheadIndex(labels, 0, 'z'), null);
+	t.is(typeAheadIndex(labels, 0, ''), null);
+	t.is(typeAheadIndex([], 0, 'a'), null);
 });
 
 test('the list opens where it fits and stays inside the window', t => {

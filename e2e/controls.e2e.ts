@@ -152,6 +152,32 @@ test('multiline composer keeps drafts, ignores IME Enter and changes mode/defaul
 	).toBeEnabled();
 });
 
+test('typing on the mode dropdown opens it on the matching option without changing the mode until Enter (R2-03)', async () => {
+	const mode = page.getByRole('combobox', {
+		name: 'mode for this thread',
+		exact: true,
+	});
+	const active = mode
+		.locator('xpath=..')
+		.locator('[role="option"][data-active]');
+	const before = await mode.getAttribute('data-value');
+	await mode.focus();
+	await page.keyboard.press('p');
+	await expect(mode).toHaveAttribute('aria-expanded', 'true');
+	await expect(active).toHaveAttribute('data-value', 'plan');
+	await expect(mode).toHaveAttribute('data-value', before ?? '');
+	await page.keyboard.press('Enter');
+	await expectValue(mode, 'plan');
+	// Letters typed quickly make one search, so "ar" finds architect and Escape keeps plan.
+	// The control is disabled while the change applies, which also drops its focus.
+	await expect(mode).toBeEnabled();
+	await mode.focus();
+	await page.keyboard.type('ar');
+	await expect(active).toHaveAttribute('data-value', 'architect');
+	await page.keyboard.press('Escape');
+	await expectValue(mode, 'plan');
+});
+
 test('the mode and project default disclosure is a button that reveals its body (C-05)', async () => {
 	const toggle = page.getByRole('button', {
 		name: 'mode and project default details',

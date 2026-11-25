@@ -36,6 +36,28 @@ export function nextIndex(
 	}
 }
 
+// The option a typed prefix points at, like a native select: the search runs on from the
+// current option and wraps, and one letter typed again moves to the next option with it.
+export function typeAheadIndex(
+	labels: readonly string[],
+	current: number,
+	typed: string,
+): number | null {
+	const text = typed.toLowerCase();
+	if (!text) return null;
+	const repeated = [...text].every(character => character === text[0]);
+	const query = repeated ? text.slice(0, 1) : text;
+	const start = repeated ? current + 1 : current;
+	for (let step = 0; step < labels.length; step++) {
+		const index = (start + step) % labels.length;
+		if (labels[index].toLowerCase().startsWith(query)) return index;
+	}
+	return null;
+}
+
+// Letters typed within this long of each other make one search.
+const typeAheadMs = 800;
+
 export interface ListPlacement {
 	left: number;
 	minWidth: number;
@@ -83,6 +105,7 @@ export function Dropdown(props: DropdownProps) {
 	const [open, setOpen] = React.useState(false);
 	const [placement, setPlacement] = React.useState<ListPlacement | null>(null);
 	const trigger = React.useRef<HTMLButtonElement>(null);
+	const typed = React.useRef({text: '', at: 0});
 	const selected = Math.max(
 		0,
 		props.options.findIndex(option => option.value === props.value),
@@ -159,6 +182,32 @@ export function Dropdown(props: DropdownProps) {
 				onClick={() => (open ? setOpen(false) : show())}
 				onBlur={() => setOpen(false)}
 				onKeyDown={event => {
+					if (
+						event.key.length === 1 &&
+						event.key !== ' ' &&
+						!event.ctrlKey &&
+						!event.metaKey &&
+						!event.altKey
+					) {
+						const now = Date.now();
+						const text =
+							(now - typed.current.at < typeAheadMs ? typed.current.text : '') +
+							event.key;
+						typed.current = {text, at: now};
+						const match = typeAheadIndex(
+							props.options.map(option => option.label),
+							open ? active : selected,
+							text,
+						);
+						if (match !== null) {
+							event.preventDefault();
+							if (!open) show();
+							setActive(match);
+						}
+						return;
+					}
+					// Any other key ends the search, so letters typed after Enter start a new one.
+					typed.current.text = '';
 					if (!open) {
 						if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
 							event.preventDefault();
