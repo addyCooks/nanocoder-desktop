@@ -314,7 +314,7 @@ components:
 How Nanocoder Desktop looks. Behaviour, authority and accessibility requirements remain in [`planning/`](planning/index.md).
 
 - Status: Approved by the user as designer, 31 October 2026 (`DEC-40`). Where the approved mockup and this file disagreed, the mockup won and this file was updated (`DEC-41`).
-- Last updated: 2026-11-24
+- Last updated: 2026-11-25
 - Source: [UI exploration][mockup], revision 4, main direction only. Alternatives and anything labelled new idea or later are not implementation scope.
 - Format: [DESIGN.md alpha][spec]. Front-matter tokens are normative; generated CSS is never edited by hand.
 
@@ -420,7 +420,7 @@ A question offers only provided choices, no invented free-text reply. The deskto
 
 ### Composer
 
-Panel fill, 15px reading input, 13px corners, blue focus border. That border is the only focus mark while typing: the input draws no inner ring. Send is a round button with an arrow icon, filled primary when ready. Compact model/mode controls below the input, with send aligned right. Model, mode and browser profile choices use one custom dropdown: a combobox button with a listbox that opens above the composer, keyboard-driven (arrows, Home, End, Enter, Space, Escape), with the active option on a primary-soft fill and the selected one in primary ink. Model applies to the whole project; mode changes only between turns; yolo needs native consent and is never restored or a default. State refusals appear beside the locked control. Drafts remain editable and unqueued where allowed.
+Panel fill, 15px reading input, 13px corners, blue focus border. That border is the only focus mark while typing: the input draws no inner ring. Send is a round button with an arrow icon, filled primary when ready. Compact model/mode controls below the input, with send aligned right. Model, mode and browser profile choices use one custom dropdown: a combobox button with a listbox that opens above the composer, keyboard-driven (arrows, Home, End, Enter, Space, Escape, and typing the start of an option's name to move to it, which opens a closed list on the match without changing the value), with the active option on a primary-soft fill and the selected one in primary ink. Model applies to the whole project; mode changes only between turns; yolo needs native consent and is never restored or a default. State refusals appear beside the locked control. Drafts remain editable and unqueued where allowed.
 
 Only reported context use can produce the context pill/gauge. No token estimate or context figure is fabricated. Helper text uses readable muted ink. Disabled input is not faded to unreadable opacity.
 

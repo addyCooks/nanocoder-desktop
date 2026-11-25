@@ -152,6 +152,66 @@ test('multiline composer keeps drafts, ignores IME Enter and changes mode/defaul
 	).toBeEnabled();
 });
 
+test('typing on the mode dropdown opens it on the matching option without changing the mode until Enter (R2-03)', async () => {
+	const mode = page.getByRole('combobox', {
+		name: 'mode for this thread',
+		exact: true,
+	});
+	const active = mode
+		.locator('xpath=..')
+		.locator('[role="option"][data-active]');
+	const before = await mode.getAttribute('data-value');
+	await mode.focus();
+	await page.keyboard.press('p');
+	await expect(mode).toHaveAttribute('aria-expanded', 'true');
+	await expect(active).toHaveAttribute('data-value', 'plan');
+	await expect(mode).toHaveAttribute('data-value', before ?? '');
+	await page.keyboard.press('Enter');
+	await expectValue(mode, 'plan');
+	// Letters typed quickly make one search, so "ar" finds architect and Escape keeps plan.
+	// The control is disabled while the change applies, which also drops its focus.
+	await expect(mode).toBeEnabled();
+	await mode.focus();
+	await page.keyboard.type('ar');
+	await expect(active).toHaveAttribute('data-value', 'architect');
+	await page.keyboard.press('Escape');
+	await expectValue(mode, 'plan');
+});
+
+test('a dropdown list taller than its window scrolls the active option into view (R2-03)', async () => {
+	// The mode list is short, so a smaller window is set through the stylesheet object (the CSP refuses a style tag).
+	await page.evaluate(() => {
+		const sheet = [...document.styleSheets].find(candidate => {
+			try {
+				return candidate.cssRules.length > 0;
+			} catch {
+				return false;
+			}
+		});
+		sheet?.insertRule(
+			'.dropdown-list { max-height: 76px !important; }',
+			sheet.cssRules.length,
+		);
+	});
+	await page
+		.getByRole('combobox', {name: 'mode for this thread', exact: true})
+		.focus();
+	await page.keyboard.type('ar');
+	await expect
+		.poll(() =>
+			page.evaluate(() => {
+				const list = document.querySelector('.composer-mode .dropdown-list');
+				const active = list?.querySelector('[data-active]');
+				if (!list || !active) return false;
+				const box = list.getBoundingClientRect();
+				const row = active.getBoundingClientRect();
+				return row.top >= box.top - 1 && row.bottom <= box.bottom + 1;
+			}),
+		)
+		.toBe(true);
+	await page.keyboard.press('Escape');
+});
+
 test('the mode and project default disclosure is a button that reveals its body (C-05)', async () => {
 	const toggle = page.getByRole('button', {
 		name: 'mode and project default details',
