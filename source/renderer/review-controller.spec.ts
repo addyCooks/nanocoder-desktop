@@ -209,6 +209,130 @@ test('GIT-13 a repository that cannot be read keeps the last good view and says 
 	t.false(f.controller.getState().value?.available);
 });
 
+test('GIT-04 opening review with one change selects its diff immediately', async t => {
+	const f = fixture();
+	f.set(ok(status([entry('only.ts', {unstaged: 'modified'})])));
+	f.controller.select('p');
+	await f.flush();
+	t.deepEqual(f.controller.getState().selected, {
+		path: 'only.ts',
+		staged: false,
+	});
+	t.is(f.controller.getState().diff?.value?.path, 'only.ts');
+	t.deepEqual(f.calls, ['status', 'diff:only.ts:false']);
+});
+
+test('GIT-04 opening review with several changes preserves a valid selection and otherwise waits', async t => {
+	const f = fixture();
+	f.set(
+		ok(
+			status([
+				entry('a.ts', {unstaged: 'modified'}),
+				entry('b.ts', {staged: 'modified'}),
+			]),
+		),
+	);
+	f.controller.select('p');
+	await f.flush();
+	t.is(f.controller.getState().selected, null);
+	t.deepEqual(f.calls, ['status']);
+	await f.controller.show('b.ts', true);
+	await f.controller.refresh();
+	await f.flush();
+	t.deepEqual(f.controller.getState().selected, {path: 'b.ts', staged: true});
+	t.is(f.controller.getState().diff?.value?.path, 'b.ts');
+	f.set(ok(status([entry('a.ts', {unstaged: 'modified'})])));
+	await f.controller.refresh();
+	await f.flush();
+	t.is(f.controller.getState().selected, null);
+	t.is(f.controller.getState().diff, null);
+});
+
+test('GIT-03 changing filters keeps a valid selection and clears one outside the filter', async t => {
+	const f = fixture();
+	f.set(
+		ok(
+			status([
+				entry('a.ts', {unstaged: 'modified'}),
+				entry('b.ts', {staged: 'modified'}),
+			]),
+		),
+	);
+	f.controller.select('p');
+	await f.flush();
+	await f.controller.show('b.ts', true);
+	f.controller.setFilter('unstaged');
+	t.is(f.controller.getState().selected, null);
+	t.is(f.controller.getState().diff, null);
+	await f.controller.show('a.ts', false);
+	f.controller.setFilter('unstaged');
+	t.deepEqual(f.controller.getState().selected, {path: 'a.ts', staged: false});
+});
+
+test('GIT-06 a refresh clears a selected side that disappeared from the index', async t => {
+	const f = fixture();
+	f.set(ok(status([entry('a.ts', {staged: 'modified'})])));
+	f.controller.select('p');
+	await f.flush();
+	await f.controller.show('a.ts', true);
+	f.set(ok(status([entry('a.ts', {unstaged: 'modified'})])));
+	await f.controller.refresh();
+	await f.flush();
+	t.is(f.controller.getState().selected, null);
+	t.is(f.controller.getState().diff, null);
+});
+
+test('GIT-05 a refresh clears a selection that is no longer touched', async t => {
+	const f = fixture();
+	f.set(ok(status([entry('a.ts', {unstaged: 'modified', touched: true})])));
+	f.controller.select('p');
+	await f.flush();
+	await f.controller.show('a.ts', false);
+	f.controller.setFilter('touched');
+	f.set(ok(status([entry('a.ts', {unstaged: 'modified'})])));
+	await f.controller.refresh();
+	await f.flush();
+	t.is(f.controller.getState().selected, null);
+	t.is(f.controller.getState().diff, null);
+});
+
+test('GIT-04 review opening after a clean Files read selects the new sole change', async t => {
+	const f = fixture();
+	f.controller.setOpen(false);
+	f.set(ok(status([])));
+	f.controller.select('p');
+	await f.flush();
+	f.set(ok(status([entry('only.ts', {unstaged: 'modified'})])));
+	await f.controller.refresh();
+	await f.flush();
+	t.is(f.controller.getState().selected, null);
+	f.controller.setOpen(true);
+	await f.flush();
+	t.deepEqual(f.controller.getState().selected, {
+		path: 'only.ts',
+		staged: false,
+	});
+});
+
+test('GIT-03 duplicate Git records for a path retain both sides through refresh', async t => {
+	const f = fixture();
+	f.set(
+		ok(
+			status([
+				entry('a.ts', {staged: 'deleted'}),
+				entry('a.ts', {untracked: true}),
+			]),
+		),
+	);
+	f.controller.select('p');
+	await f.flush();
+	t.is(visibleEntries(f.controller.getState().value, 'all').length, 1);
+	await f.controller.show('a.ts', false);
+	await f.controller.refresh();
+	await f.flush();
+	t.deepEqual(f.controller.getState().selected, {path: 'a.ts', staged: false});
+});
+
 test('GIT-04 showing a file reads that side only, and a late diff for an earlier file is dropped', async t => {
 	const f = fixture();
 	f.controller.select('p');
@@ -238,6 +362,7 @@ test('GIT-06 a refresh reloads the diff that is open so it never goes stale', as
 	f.controller.select('p');
 	await f.flush();
 	await f.controller.show('a.ts', false);
+	f.set(ok(status([entry('a.ts', {unstaged: 'modified'})])));
 	f.calls.length = 0;
 	await f.controller.refresh();
 	await f.flush();

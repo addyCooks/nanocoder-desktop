@@ -12,6 +12,8 @@ import {
 import {
 	CHANNELS,
 	MAX_PROMPT_LENGTH,
+	MAX_REVIEW_EXCERPT,
+	MAX_REVIEW_LINE_SPAN,
 	type WorkspaceMethod,
 	type WorkspaceRequests,
 	type WorkspaceValues,
@@ -39,12 +41,12 @@ const attachmentSchema = z.discriminatedUnion('kind', [
 			endLine: z.number().int().min(1).max(10_000_000),
 			side: z.enum(['staged', 'unstaged']),
 			comment: z.string().trim().min(1).max(4_000),
-			excerpt: z.string().max(20_000),
+			excerpt: z.string().max(MAX_REVIEW_EXCERPT),
 		})
 		.refine(
 			value =>
 				value.endLine >= value.startLine &&
-				value.endLine - value.startLine <= 2_000,
+				value.endLine - value.startLine <= MAX_REVIEW_LINE_SPAN,
 		),
 ]);
 

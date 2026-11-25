@@ -51,7 +51,26 @@ export function visibleEntries(
 	filter: ReviewFilter,
 ): ReviewEntry[] {
 	if (!value?.available) return [];
-	return value.entries.filter(entry => {
+	const paths = new Map<string, ReviewEntry>();
+	for (const entry of value.entries) {
+		const previous = paths.get(entry.path);
+		paths.set(
+			entry.path,
+			previous
+				? {
+						...previous,
+						oldPath: previous.oldPath ?? entry.oldPath,
+						staged: previous.staged === 'none' ? entry.staged : previous.staged,
+						unstaged:
+							previous.unstaged === 'none' ? entry.unstaged : previous.unstaged,
+						untracked: previous.untracked || entry.untracked,
+						conflicted: previous.conflicted || entry.conflicted,
+						touched: previous.touched || entry.touched,
+					}
+				: entry,
+		);
+	}
+	return [...paths.values()].filter(entry => {
 		switch (filter) {
 			case 'staged':
 				return entry.staged !== 'none';
@@ -66,13 +85,39 @@ export function visibleEntries(
 }
 
 // Which side opens first: staged only when nothing is left unstaged.
-export function defaultSide(entry: ReviewEntry): boolean {
+export function defaultSide(
+	entry: ReviewEntry,
+	filter: ReviewFilter = 'all',
+): boolean {
+	if (filter === 'staged') return true;
+	if (filter === 'unstaged') return false;
 	return (
 		entry.staged !== 'none' &&
 		entry.unstaged === 'none' &&
 		!entry.untracked &&
 		!entry.conflicted
 	);
+}
+
+function selectionIsVisible(
+	selected: {path: string; staged: boolean},
+	entries: readonly ReviewEntry[],
+	filter: ReviewFilter,
+): boolean {
+	const entry = entries.find(item => item.path === selected.path);
+	if (!entry) return false;
+	if (selected.staged && entry.staged === 'none') return false;
+	if (
+		!selected.staged &&
+		entry.unstaged === 'none' &&
+		!entry.untracked &&
+		!entry.conflicted
+	)
+		return false;
+	if (filter === 'staged') return selected.staged;
+	if (filter === 'unstaged') return !selected.staged;
+	if (filter === 'touched') return entry.touched;
+	return true;
 }
 
 function fromAgent(diff: AgentDiff): ReviewDiff {
@@ -89,6 +134,8 @@ export class ReviewController {
 	private running = false;
 	private dirty = false;
 	private disposed = false;
+	private open = true;
+	private selectOnRead = false;
 	private readonly unsubscribe: () => void;
 
 	constructor(
@@ -109,6 +156,14 @@ export class ReviewController {
 		return this.state;
 	}
 
+	setOpen(open: boolean): void {
+		if (open === this.open) return;
+		this.open = open;
+		if (!open) return;
+		this.selectOnRead = true;
+		void this.refresh();
+	}
+
 	select(projectId: string | null): void {
 		if (projectId === this.state.projectId) return;
 		++this.epoch;
@@ -119,6 +174,19 @@ export class ReviewController {
 	}
 
 	setFilter(filter: ReviewFilter): void {
+		const selected = this.state.selected;
+		if (
+			selected &&
+			!selectionIsVisible(
+				selected,
+				visibleEntries(this.state.value, filter),
+				filter,
+			)
+		) {
+			++this.diffToken;
+			this.update({...this.state, filter, selected: null, diff: null});
+			return;
+		}
 		this.update({...this.state, filter});
 	}
 
@@ -149,6 +217,8 @@ export class ReviewController {
 		if (this.disposed || epoch !== this.epoch) return;
 		this.running = false;
 		if (token === this.statusToken) {
+			const opening =
+				this.open && (this.state.value === null || this.selectOnRead);
 			this.update({
 				...this.state,
 				status: result?.ok ? 'ready' : 'error',
@@ -160,8 +230,18 @@ export class ReviewController {
 						: 'The repository could not be read',
 			});
 			const selected = this.state.selected;
-			if (selected && result?.ok)
-				void this.show(selected.path, selected.staged);
+			if (result?.ok) {
+				const entries = visibleEntries(this.state.value, this.state.filter);
+				if (this.open && entries.length > 0) this.selectOnRead = false;
+				if (selected) {
+					if (selectionIsVisible(selected, entries, this.state.filter))
+						void this.show(selected.path, selected.staged);
+					else this.clearSelection();
+				} else if (opening && entries.length === 1) {
+					const only = entries[0];
+					void this.show(only.path, defaultSide(only, this.state.filter));
+				}
+			}
 		}
 		if (this.dirty) {
 			this.dirty = false;
@@ -174,7 +254,9 @@ export class ReviewController {
 		if (!projectId) return;
 		const epoch = this.epoch;
 		const token = ++this.diffToken;
-		const reload = this.state.selected?.path === path;
+		const reload =
+			this.state.selected?.path === path &&
+			this.state.selected.staged === staged;
 		const previous = reload ? this.state.diff : null;
 		this.update({
 			...this.state,
@@ -189,9 +271,10 @@ export class ReviewController {
 		});
 		const current = this.state.value?.available ? this.state.value : null;
 		const touched =
-			current?.entries.find(entry => entry.path === path)?.touched ?? false;
+			current?.entries.some(entry => entry.path === path && entry.touched) ??
+			false;
 		let note: string | null = null;
-		if (this.state.view === 'agent' && touched && current) {
+		if (!staged && this.state.view === 'agent' && touched && current) {
 			if (current.agentChanges.enabled) {
 				const agent = await this.bridge
 					.agentDiff({projectId, path})

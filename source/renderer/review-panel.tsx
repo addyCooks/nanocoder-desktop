@@ -1,11 +1,18 @@
 import * as React from 'react';
 import {
-	type DiffCursor,
 	type DiffRow,
 	diffKey,
 	parseDiff,
 	selectLines,
 } from '@/renderer/diff-parse';
+import {
+	DIFF_ROW_HEIGHT,
+	diffRowKey,
+	diffWindow,
+	MAX_DIFF_ROWS,
+	mountedDiffRows,
+	scrollTopForRow,
+} from '@/renderer/diff-virtual';
 import {keyHint} from '@/renderer/overlay-model';
 import {
 	defaultSide,
@@ -15,13 +22,17 @@ import {
 	type ReviewView,
 	visibleEntries,
 } from '@/renderer/review-controller';
+import {
+	interactionFor,
+	interactionKey,
+	type ReviewInteraction,
+	type ReviewInteractions,
+	reviewSelectionReason,
+} from '@/renderer/review-interaction';
 import {Button} from '@/renderer/ui';
 import {displayName} from '@/shared/files';
 import type {PromptAttachment} from '@/shared/ipc';
 import type {ReviewDiff, ReviewEntry} from '@/shared/review';
-
-// Very large diffs show their first lines; the rest is for an editor (PERF-08).
-const MAX_ROWS = 5_000;
 
 const FILTERS: Array<{id: ReviewFilter; label: string}> = [
 	{id: 'all', label: 'all changes'},
@@ -45,42 +56,122 @@ function DiffView({
 	diff,
 	agent,
 	commentReason,
+	interaction,
+	onInteraction,
 	onComment,
 	onOpenEditor,
 }: {
 	diff: Extract<ReviewDiff, {kind: 'text'}>;
 	agent: boolean;
 	commentReason: string | null;
+	interaction: ReviewInteraction;
+	onInteraction(next: ReviewInteraction): void;
 	onComment(comment: CommentAttachment): void;
 	onOpenEditor(path: string, line?: number): void;
 }): React.ReactElement {
 	const rows = React.useMemo(() => parseDiff(diff.diff), [diff.diff]);
-	const shown = rows.slice(0, MAX_ROWS);
-	const [cursor, setCursor] = React.useState<DiffCursor | null>(null);
-	const [comment, setComment] = React.useState('');
-	const [added, setAdded] = React.useState<string | null>(null);
+	const shown = React.useMemo(() => rows.slice(0, MAX_DIFF_ROWS), [rows]);
+	const fingerprint = diff.diff;
+	const {cursor, comment} = interaction;
+	const scroller = React.useRef<HTMLDivElement | null>(null);
+	const [window, setWindow] = React.useState(() =>
+		diffWindow(shown.length, 0, 0),
+	);
+	const [contentWidth, setContentWidth] = React.useState(0);
 	const nodes = React.useRef(new Map<number, HTMLElement>());
 	const pending = React.useRef<number | null>(null);
-	// The diff itself changed, so any earlier selection no longer points at the same lines.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: reset only when the text changes
+	const updateWindow = React.useCallback(
+		(top: number, height: number) => {
+			setWindow(diffWindow(shown.length, top, height));
+		},
+		[shown.length],
+	);
+	React.useLayoutEffect(() => {
+		const element = scroller.current;
+		if (!element) return;
+		const measure = () => updateWindow(element.scrollTop, element.clientHeight);
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [updateWindow]);
+	React.useLayoutEffect(() => {
+		const element = scroller.current;
+		if (!element) return;
+		let disposed = false;
+		const measure = () => {
+			if (disposed) return;
+			const style = getComputedStyle(element);
+			const context = document.createElement('canvas').getContext('2d');
+			if (!context) return;
+			context.font = `${style.fontSize} ${style.fontFamily}`;
+			const gutter = context.measureText('0'.repeat(12)).width + 36;
+			let width = 0;
+			for (const row of shown)
+				width = Math.max(
+					width,
+					context.measureText(row.text.replace(/\t/gu, '        ')).width,
+				);
+			setContentWidth(Math.ceil(width + gutter));
+		};
+		measure();
+		void document.fonts.ready.then(measure);
+		return () => {
+			disposed = true;
+		};
+	}, [shown]);
+	const activeCursor =
+		cursor && interaction.cursorFingerprint === fingerprint ? cursor : null;
+	const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: row coordinates belong to this exact diff
 	React.useEffect(() => {
-		setCursor(null);
-	}, [diff.diff]);
-	React.useEffect(() => {
+		setFocusedIndex(null);
+	}, [fingerprint]);
+	React.useLayoutEffect(() => {
 		if (pending.current === null) return;
 		nodes.current.get(pending.current)?.focus();
 		pending.current = null;
 	});
-	const selection = cursor
-		? selectLines(shown, cursor.anchor, cursor.cursor)
-		: null;
-	const low = cursor ? Math.min(cursor.anchor, cursor.cursor) : -1;
-	const high = cursor ? Math.max(cursor.anchor, cursor.cursor) : -1;
+	const anchor = activeCursor?.anchor;
+	const cursorIndex = activeCursor?.cursor;
+	const selection = React.useMemo(
+		() =>
+			anchor !== undefined && cursorIndex !== undefined
+				? selectLines(shown, anchor, cursorIndex)
+				: null,
+		[shown, anchor, cursorIndex],
+	);
+	const selectionReason = selection ? reviewSelectionReason(selection) : null;
+	const low = activeCursor
+		? Math.min(activeCursor.anchor, activeCursor.cursor)
+		: -1;
+	const high = activeCursor
+		? Math.max(activeCursor.anchor, activeCursor.cursor)
+		: -1;
 	const first = shown.findIndex(row => row.selectable);
-	const tabbable = cursor ? cursor.cursor : first;
+	const tabbable = activeCursor?.cursor ?? focusedIndex ?? first;
 	const side = diff.staged ? 'staged' : 'unstaged';
 	const label = agent ? 'agent changes' : side;
 	const described = agent ? 'agent changes' : `${side} changes`;
+	const focusRow = (index: number) => {
+		pending.current = index;
+		const element = scroller.current;
+		if (!element) return;
+		const top = scrollTopForRow(
+			index,
+			element.scrollTop,
+			element.clientHeight,
+			shown.length,
+		);
+		if (top !== element.scrollTop) element.scrollTop = top;
+		updateWindow(top, element.clientHeight);
+	};
+	const orderedMounted = mountedDiffRows(
+		window,
+		activeCursor?.cursor,
+		focusedIndex,
+		tabbable,
+	);
 	return (
 		<div className="diff-view">
 			<header className="diff-header">
@@ -106,88 +197,116 @@ function DiffView({
 				)}
 			</p>
 			<div
+				ref={scroller}
 				className="diff-lines"
 				role="listbox"
 				aria-label={`${described} in ${displayName(diff.path)}. select lines to comment on them`}
 				aria-multiselectable="true"
+				onScroll={event =>
+					updateWindow(
+						event.currentTarget.scrollTop,
+						event.currentTarget.clientHeight,
+					)
+				}
 				onKeyDown={event => {
 					if (event.altKey || event.ctrlKey || event.metaKey) return;
-					if (event.key === 'Escape' && cursor) {
+					if (event.key === 'Escape' && activeCursor) {
 						event.preventDefault();
 						event.stopPropagation();
-						setCursor(null);
+						onInteraction({
+							...interaction,
+							cursor: null,
+							cursorFingerprint: null,
+						});
 						return;
 					}
 					const next = diffKey(
 						shown,
-						cursor ??
+						activeCursor ??
 							(tabbable >= 0 ? {anchor: tabbable, cursor: tabbable} : null),
 						event.key,
 						event.shiftKey,
 					);
 					if (!next) return;
 					event.preventDefault();
-					pending.current = next.cursor;
-					setCursor(next);
+					focusRow(next.cursor);
+					onInteraction({
+						...interaction,
+						cursor: next,
+						cursorFingerprint: fingerprint,
+					});
 				}}
 			>
-				{shown.map((row, index) => (
-					<div
-						// Rows never reorder within one diff, so their position is their identity.
-						key={index}
-						ref={node => {
-							if (node) nodes.current.set(index, node);
-							else nodes.current.delete(index);
-						}}
-						role="option"
-						aria-selected={
-							row.selectable ? index >= low && index <= high : undefined
-						}
-						aria-disabled={row.selectable ? undefined : true}
-						tabIndex={index === tabbable ? 0 : -1}
-						className={`diff-row diff-row--${row.kind}${
-							row.selectable && index >= low && index <= high
-								? ' diff-row--selected'
-								: ''
-						}`}
-						onClick={event => {
-							if (!row.selectable) return;
-							setAdded(null);
-							setCursor(
-								event.shiftKey && cursor
-									? {anchor: cursor.anchor, cursor: index}
-									: {anchor: index, cursor: index},
-							);
-						}}
-					>
-						<span className="diff-no" aria-hidden="true">
-							{row.oldLine ?? ''}
-						</span>
-						<span className="diff-no" aria-hidden="true">
-							{row.newLine ?? ''}
-						</span>
-						<span className="diff-sign" aria-hidden="true">
-							{row.kind === 'add' ? '+' : row.kind === 'remove' ? '−' : ''}
-						</span>
-						<span className="sr-only">
-							{KIND_WORDS[row.kind]}
-							{row.selectable ? ` line ${row.newLine ?? row.oldLine}` : ''}:{' '}
-						</span>
-						<span className="diff-text">{row.text}</span>
-					</div>
-				))}
-				{rows.length > MAX_ROWS && (
-					<div
-						className="diff-more"
-						role="option"
-						aria-disabled="true"
-						aria-selected={undefined}
-					>
-						{(rows.length - MAX_ROWS).toLocaleString('en')} more lines not
-						shown. open the file in an editor to review them.
-					</div>
-				)}
+				<div
+					className="diff-spacer"
+					style={{height: window.totalHeight, minWidth: contentWidth}}
+				>
+					{orderedMounted.map(index => {
+						const row = shown[index];
+						if (!row) return null;
+						return (
+							<div
+								key={diffRowKey(index)}
+								ref={node => {
+									if (node) nodes.current.set(index, node);
+									else nodes.current.delete(index);
+								}}
+								onFocus={() => setFocusedIndex(index)}
+								role="option"
+								aria-selected={
+									row.selectable ? index >= low && index <= high : undefined
+								}
+								aria-disabled={row.selectable ? undefined : true}
+								aria-posinset={index + 1}
+								aria-setsize={shown.length}
+								tabIndex={index === tabbable ? 0 : -1}
+								className={`diff-row diff-row--${row.kind}${
+									row.selectable && index >= low && index <= high
+										? ' diff-row--selected'
+										: ''
+								}`}
+								style={{
+									transform: `translateY(${index * DIFF_ROW_HEIGHT}px)`,
+									height: DIFF_ROW_HEIGHT,
+									lineHeight: `${DIFF_ROW_HEIGHT}px`,
+								}}
+								onClick={event => {
+									if (!row.selectable) return;
+									onInteraction({
+										...interaction,
+										cursor:
+											event.shiftKey && activeCursor
+												? {anchor: activeCursor.anchor, cursor: index}
+												: {anchor: index, cursor: index},
+										cursorFingerprint: fingerprint,
+									});
+								}}
+							>
+								<span className="diff-no" aria-hidden="true">
+									{row.oldLine ?? ''}
+								</span>
+								<span className="diff-no" aria-hidden="true">
+									{row.newLine ?? ''}
+								</span>
+								<span className="diff-sign" aria-hidden="true">
+									{row.kind === 'add' ? '+' : row.kind === 'remove' ? '−' : ''}
+								</span>
+								<span className="sr-only">
+									{KIND_WORDS[row.kind]}
+									{row.selectable ? ` line ${row.newLine ?? row.oldLine}` : ''}:{' '}
+								</span>
+								<span className="diff-text">{row.text}</span>
+							</div>
+						);
+					})}
+				</div>
 			</div>
+			{rows.length > MAX_DIFF_ROWS && (
+				<p className="diff-more" role="status">
+					{(rows.length - MAX_DIFF_ROWS).toLocaleString('en')} more lines not
+					shown. open the file in an editor to review them.
+				</p>
+			)}
 			{selection && (
 				<form
 					className="review-comment"
@@ -195,7 +314,7 @@ function DiffView({
 					onSubmit={event => {
 						event.preventDefault();
 						const text = comment.trim();
-						if (!text || commentReason) return;
+						if (!text || commentReason || selectionReason) return;
 						onComment({
 							kind: 'review-comment',
 							path: diff.path,
@@ -205,11 +324,11 @@ function DiffView({
 							comment: text,
 							excerpt: selection.excerpt,
 						});
-						setComment('');
-						setCursor(null);
-						setAdded(
-							`comment on ${displayName(diff.path)}:${selection.startLine} added. it goes with your next message.`,
-						);
+						onInteraction({
+							comment: '',
+							cursor: null,
+							cursorFingerprint: null,
+						});
 					}}
 				>
 					<label>
@@ -223,26 +342,42 @@ function DiffView({
 							value={comment}
 							rows={3}
 							maxLength={4000}
-							onChange={event => setComment(event.target.value)}
+							onChange={event =>
+								onInteraction({...interaction, comment: event.target.value})
+							}
 							onKeyDown={event => event.stopPropagation()}
 						/>
 					</label>
 					{commentReason && <p className="files-hint">{commentReason}</p>}
+					{selectionReason && (
+						<p className="files-hint" role="alert">
+							{selectionReason}
+						</p>
+					)}
 					<div className="review-comment-actions">
 						<Button
 							type="submit"
-							disabled={!comment.trim() || commentReason !== null}
+							disabled={
+								!comment.trim() ||
+								commentReason !== null ||
+								selectionReason !== null
+							}
 						>
 							add to next message
 						</Button>
-						<Button onClick={() => setCursor(null)}>clear selection</Button>
+						<Button
+							onClick={() =>
+								onInteraction({
+									...interaction,
+									cursor: null,
+									cursorFingerprint: null,
+								})
+							}
+						>
+							clear selection
+						</Button>
 					</div>
 				</form>
-			)}
-			{added && (
-				<p role="status" className="files-hint">
-					{added}
-				</p>
 			)}
 		</div>
 	);
@@ -258,6 +393,8 @@ export function ReviewPanel({
 	onRefresh,
 	onComment,
 	onOpenEditor,
+	interactions,
+	onInteraction,
 }: {
 	state: ReviewState;
 	commentReason: string | null;
@@ -268,6 +405,11 @@ export function ReviewPanel({
 	onRefresh(): void;
 	onComment(comment: CommentAttachment): void;
 	onOpenEditor(path: string, line?: number): void;
+	interactions: ReviewInteractions;
+	onInteraction(
+		identity: Parameters<typeof interactionKey>[0],
+		next: ReviewInteraction,
+	): void;
 }): React.ReactElement {
 	const {value} = state;
 	if (!value)
@@ -287,12 +429,26 @@ export function ReviewPanel({
 	const entries = visibleEntries(value, state.filter);
 	const selected = state.selected;
 	const current: ReviewEntry | undefined = selected
-		? value.entries.find(entry => entry.path === selected.path)
+		? visibleEntries(value, 'all').find(entry => entry.path === selected.path)
 		: undefined;
 	const agentView = state.diff?.source === 'agent';
-	const offerView = current?.touched === true && value.agentChanges.enabled;
+	const interactionIdentity =
+		state.diff?.value?.kind === 'text'
+			? {
+					projectId: state.projectId,
+					path: state.diff.value.path,
+					staged: state.diff.value.staged,
+					agent: agentView,
+				}
+			: null;
+	const offerView =
+		!selected?.staged &&
+		current?.touched === true &&
+		value.agentChanges.enabled;
 	const both =
 		!agentView &&
+		state.filter !== 'staged' &&
+		state.filter !== 'unstaged' &&
 		current !== undefined &&
 		current.staged !== 'none' &&
 		(current.unstaged !== 'none' || current.untracked);
@@ -350,13 +506,47 @@ export function ReviewPanel({
 				</p>
 			) : (
 				<ul className="review-list" aria-label="changed files">
-					{entries.map(entry => (
+					{entries.map((entry, index) => (
 						<li key={entry.path}>
 							<button
 								type="button"
 								className="review-entry"
 								aria-pressed={selected?.path === entry.path}
-								onClick={() => onShow(entry.path, defaultSide(entry))}
+								tabIndex={
+									selected
+										? selected.path === entry.path
+											? 0
+											: -1
+										: index === 0
+											? 0
+											: -1
+								}
+								onKeyDown={event => {
+									if (event.altKey || event.ctrlKey || event.metaKey) return;
+									const next =
+										event.key === 'ArrowDown'
+											? Math.min(entries.length - 1, index + 1)
+											: event.key === 'ArrowUp'
+												? Math.max(0, index - 1)
+												: event.key === 'Home'
+													? 0
+													: event.key === 'End'
+														? entries.length - 1
+														: -1;
+									if (next < 0) return;
+									event.preventDefault();
+									if (next === index) return;
+									const target = entries[next];
+									const buttons =
+										event.currentTarget.parentElement?.parentElement?.querySelectorAll<HTMLButtonElement>(
+											'.review-entry',
+										);
+									buttons?.[next]?.focus();
+									onShow(target.path, defaultSide(target, state.filter));
+								}}
+								onClick={() =>
+									onShow(entry.path, defaultSide(entry, state.filter))
+								}
 							>
 								<span className="review-path">{displayName(entry.path)}</span>
 								<span className="review-state">{describeEntry(entry)}</span>
@@ -423,12 +613,18 @@ export function ReviewPanel({
 					{state.diff?.status === 'error' && (
 						<p role="alert">{state.diff.error}</p>
 					)}
-					{state.diff?.value?.kind === 'text' && (
+					{state.diff?.value?.kind === 'text' && interactionIdentity && (
 						<DiffView
-							key={`${state.diff.value.path}:${state.diff.value.staged}:${state.diff.source}`}
+							key={interactionKey(interactionIdentity)}
 							diff={state.diff.value}
 							agent={agentView}
 							commentReason={commentReason}
+							interaction={interactionFor(
+								interactions,
+								interactionIdentity,
+								state.diff.value.diff,
+							)}
+							onInteraction={next => onInteraction(interactionIdentity, next)}
 							onComment={onComment}
 							onOpenEditor={onOpenEditor}
 						/>

@@ -1,11 +1,13 @@
 import type {LucideIcon} from 'lucide-react';
 import {
 	Archive,
+	ArrowDown,
 	ArrowLeft,
 	ArrowRight,
 	ArrowUp,
 	ChevronDown,
 	ChevronRight,
+	Copy,
 	Ellipsis,
 	FileText,
 	Folder,
@@ -25,7 +27,9 @@ export const icons = {
 	archive: Archive,
 	back: ArrowLeft,
 	close: X,
+	copy: Copy,
 	collapse: ChevronDown,
+	latest: ArrowDown,
 	expand: ChevronRight,
 	file: FileText,
 	folder: Folder,

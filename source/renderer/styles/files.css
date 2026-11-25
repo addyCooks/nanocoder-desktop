@@ -53,8 +53,13 @@
 	min-height: 0;
 }
 
-.workbench-panel--browser {
+.workbench-panel--browser,
+.workbench-panel--review {
 	flex: 1 1 auto;
+}
+
+.workbench-panel--review {
+	min-height: 360px;
 }
 
 .workbench-panel[hidden] {
@@ -248,8 +253,11 @@
 /* Review */
 .review-panel {
 	display: flex;
+	flex: 1 1 auto;
 	flex-direction: column;
 	gap: 8px;
+	min-height: 0;
+	overflow: auto;
 }
 
 .review-meta,
@@ -284,6 +292,13 @@
 	list-style: none;
 }
 
+.review-list {
+	flex: 0 0 auto;
+	min-height: 0;
+	max-height: 33%;
+	overflow: auto;
+}
+
 .review-entry {
 	display: flex;
 	width: 100%;
@@ -315,16 +330,27 @@
 
 .review-diff {
 	display: flex;
+	flex: 1 1 auto;
 	flex-direction: column;
 	gap: 6px;
+	min-height: 240px;
+	overflow: hidden;
 	padding-top: 8px;
 	border-top: 1px solid var(--colors-stroke);
 }
 
+.review-diff > button {
+	flex: none;
+	align-self: flex-start;
+}
+
 .diff-view {
 	display: flex;
+	flex: 1 1 auto;
 	flex-direction: column;
 	gap: 6px;
+	min-height: 0;
+	overflow: hidden;
 }
 
 .diff-header {
@@ -354,7 +380,8 @@
 }
 
 .diff-lines {
-	max-height: 55vh;
+	flex: 1 1 0;
+	min-height: 80px;
 	overflow: auto;
 	border: 1px solid var(--colors-stroke);
 	border-radius: 4px;
@@ -366,10 +393,20 @@
 	font-size: 13px;
 }
 
+.diff-spacer {
+	position: relative;
+	min-width: 100%;
+}
+
 .diff-row {
+	position: absolute;
+	top: 0;
+	left: 0;
 	display: flex;
+	box-sizing: border-box;
 	gap: 6px;
-	min-width: max-content;
+	width: max-content;
+	min-width: 100%;
 	padding-inline: 6px;
 	color: var(--colors-on-surface);
 	white-space: pre;
@@ -422,12 +459,17 @@
 }
 
 .diff-more {
-	padding: 6px;
+	flex: none;
+	margin: 0;
 	color: var(--colors-on-surface-muted);
 }
 
 .review-comment {
 	display: flex;
+	flex: 0 1 auto;
+	min-height: 0;
+	max-height: 45%;
+	overflow: auto;
 	flex-direction: column;
 	gap: 6px;
 	padding: 8px;

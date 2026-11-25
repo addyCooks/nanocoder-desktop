@@ -18,13 +18,14 @@ import {
 	type DialogApi,
 	type DialogRequest,
 	dialogLabel,
-	filterActions,
+	filterPalette,
 	focusReturn,
 	keyHint,
 	moveSelection,
 	type OverlayRequest,
 	overlayRules,
 	type PaletteAction,
+	type PaletteThread,
 	runAction,
 	type Toast,
 	toastQueue,
@@ -127,6 +128,7 @@ function ShortcutRow({label, keys}: {label: string; keys: React.ReactNode}) {
 export function OverlayProvider({
 	ref,
 	actions,
+	threads = [],
 	pendingApprovalCount = 0,
 	canClose = () => true,
 	onClosed,
@@ -136,6 +138,7 @@ export function OverlayProvider({
 }: {
 	ref?: Ref<OverlayHandle>;
 	actions: PaletteAction[];
+	threads?: PaletteThread[];
 	pendingApprovalCount?: number;
 	// A dismissal or replacement is refused when this returns false; the dialog stays open.
 	canClose?(request: OverlayRequest): boolean;
@@ -146,14 +149,13 @@ export function OverlayProvider({
 }) {
 	const [current, setCurrent] = useState<OverlayRequest | null>(null);
 	const [query, setQuery] = useState('');
-	const [selected, setSelected] = useState(0);
+	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [toast, setToast] = useState<Toast | null>(null);
 	const [themeError, setThemeError] = useState('');
 	const [activeTheme, setActiveTheme] = useState<'dark' | 'light'>('dark');
 	const dialog = useRef<HTMLDialogElement>(null);
 	const latestHooks = useRef({canClose, onClosed, onOpenChange});
 	const returnFocus = useRef<(() => void) | null>(null);
-	const returnTarget = useRef<HTMLElement | null>(null);
 	const closingFocus = useRef<Element | null>(null);
 	const notifications = useRef<ReturnType<typeof toastQueue> | null>(null);
 	const themeChanged = useRef(false);
@@ -231,7 +233,6 @@ export function OverlayProvider({
 			if (!rules.open(request)) return;
 			if (!dialog.current?.open) {
 				const target = opener === undefined ? document.activeElement : opener;
-				returnTarget.current = target instanceof HTMLElement ? target : null;
 				returnFocus.current = focusReturn(
 					target instanceof HTMLElement ? target : null,
 					document.querySelector<HTMLButtonElement>(
@@ -240,7 +241,7 @@ export function OverlayProvider({
 				);
 			}
 			setQuery('');
-			setSelected(0);
+			setSelectedId(null);
 			setCurrent(request);
 		},
 		[rules],
@@ -376,19 +377,29 @@ export function OverlayProvider({
 			run: () => open('shortcuts'),
 		},
 	];
-	const filtered = filterActions(commands, query);
-	const index = moveSelection(selected, 0, filtered.length);
-	const selectedId = filtered[index]?.id;
+	const groups = filterPalette(commands, threads, query);
+	const filtered = groups.flatMap(group => group.results);
+	const resultKey = (result: (typeof filtered)[number]) =>
+		`${result.kind}-${result.id}`;
+	const selectedIndex = selectedId
+		? filtered.findIndex(result => resultKey(result) === selectedId)
+		: -1;
+	const index = moveSelection(selectedIndex, 0, filtered.length);
+	const activeResultId = filtered[index] ? resultKey(filtered[index]) : null;
 	useLayoutEffect(() => {
-		if (current === 'palette' && selectedId)
+		if (current === 'palette' && selectedId !== activeResultId)
+			setSelectedId(activeResultId);
+	}, [current, selectedId, activeResultId]);
+	useLayoutEffect(() => {
+		if (current === 'palette' && activeResultId)
 			document
-				.getElementById(`palette-option-${selectedId}`)
+				.getElementById(`palette-option-${activeResultId}`)
 				?.scrollIntoView({block: 'nearest'});
-	}, [current, selectedId]);
+	}, [current, activeResultId]);
 	const execute = (action: PaletteAction | undefined) => {
 		if (!action || action.disabledReason) return;
-		if (!action.opensDialog) close();
 		runAction(action);
+		if (!action.opensDialog) closeIf('palette');
 	};
 	const modifier = commandModifier(navigator.platform);
 
@@ -442,20 +453,20 @@ export function OverlayProvider({
 							<input
 								data-autofocus
 								role="combobox"
-								aria-label="find a command"
+								aria-label="find a thread or action"
 								aria-expanded={filtered.length > 0}
 								aria-autocomplete="list"
 								aria-controls={filtered.length ? 'palette-results' : undefined}
 								aria-activedescendant={
-									filtered[index]
-										? `palette-option-${filtered[index].id}`
+									activeResultId
+										? `palette-option-${activeResultId}`
 										: undefined
 								}
 								value={query}
-								placeholder="find an action…"
+								placeholder="find a thread or action…"
 								onChange={event => {
 									setQuery(event.target.value);
-									setSelected(0);
+									setSelectedId(null);
 								}}
 								onKeyDown={event => {
 									if (
@@ -465,12 +476,13 @@ export function OverlayProvider({
 										return;
 									if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 										event.preventDefault();
-										setSelected(
-											moveSelection(
-												index,
-												event.key === 'ArrowDown' ? 1 : -1,
-												filtered.length,
-											),
+										const next = moveSelection(
+											index,
+											event.key === 'ArrowDown' ? 1 : -1,
+											filtered.length,
+										);
+										setSelectedId(
+											filtered[next] ? resultKey(filtered[next]) : null,
 										);
 									} else if (event.key === 'Enter') {
 										event.preventDefault();
@@ -483,42 +495,75 @@ export function OverlayProvider({
 							<div
 								id="palette-results"
 								role="listbox"
-								aria-label="commands"
+								aria-label="matching threads and actions"
 								className="palette-results"
 							>
-								{filtered.map((action, position) => (
+								{groups.map(group => (
 									<div
-										key={action.id}
-										id={`palette-option-${action.id}`}
-										role="option"
-										tabIndex={-1}
-										aria-selected={position === index}
-										aria-disabled={!!action.disabledReason}
-										className="palette-option"
-										onPointerMove={() => setSelected(position)}
-										onMouseDown={event => event.preventDefault()}
-										onClick={() => execute(action)}
-										onKeyDown={event => {
-											if (event.key === 'Enter') execute(action);
-										}}
+										key={group.id}
+										role={query.trim() ? 'group' : undefined}
+										aria-labelledby={
+											query.trim() ? `palette-group-${group.id}` : undefined
+										}
+										className="palette-group"
 									>
-										<span aria-hidden="true">{action.glyph}</span>
-										<span className="palette-label">
-											{action.label}
-											{action.disabledReason && (
-												<span className="palette-reason">
-													{' '}
-													· unavailable: {action.disabledReason}
-												</span>
-											)}
-										</span>
-										{action.shortcut && <kbd>{action.shortcut}</kbd>}
+										{query.trim() && (
+											<div
+												id={`palette-group-${group.id}`}
+												role="presentation"
+												className="palette-group-heading"
+											>
+												{group.label}
+											</div>
+										)}
+										{group.results.map(result => {
+											return (
+												<div
+													key={resultKey(result)}
+													id={`palette-option-${resultKey(result)}`}
+													role="option"
+													tabIndex={-1}
+													aria-selected={resultKey(result) === activeResultId}
+													aria-current={
+														result.kind === 'thread' && result.current
+															? 'true'
+															: undefined
+													}
+													aria-disabled={!!result.disabledReason}
+													className="palette-option"
+													onPointerMove={() => setSelectedId(resultKey(result))}
+													onMouseDown={event => event.preventDefault()}
+													onClick={() => execute(result)}
+													onKeyDown={event => {
+														if (event.key === 'Enter') execute(result);
+													}}
+												>
+													<span aria-hidden="true">{result.glyph}</span>
+													<span className="palette-label">
+														{result.label}
+														{result.kind === 'thread' && result.current && (
+															<span className="palette-current">
+																{' '}
+																· current thread
+															</span>
+														)}
+														{result.disabledReason && (
+															<span className="palette-reason">
+																{' '}
+																· unavailable: {result.disabledReason}
+															</span>
+														)}
+													</span>
+													{result.shortcut && <kbd>{result.shortcut}</kbd>}
+												</div>
+											);
+										})}
 									</div>
 								))}
 							</div>
 						) : (
 							<p className="palette-empty" role="status">
-								no commands found. try a different action name.
+								no threads or actions found. try a different search.
 							</p>
 						)}
 						<p className="overlay-hint">

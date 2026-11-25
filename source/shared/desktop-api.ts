@@ -25,6 +25,7 @@ export interface DesktopApi extends WorkspaceApi {
 	terminal: TerminalApi;
 	browser: BrowserApi;
 	getAppInfo(): Promise<IpcResult<AppInfo>>;
+	writeClipboard(request: {text: string}): Promise<IpcResult<null>>;
 	getNanocoderRuntime(): Promise<IpcResult<NanocoderRuntime>>;
 	connectNanocoder(): Promise<IpcResult<ConnectResult>>;
 	// Returns a function that stops listening.

@@ -175,6 +175,13 @@
 	min-height: 0;
 }
 
+.shell-latest {
+	flex: none;
+	align-self: flex-end;
+	width: max-content;
+	margin: var(--spacing-xs) var(--spacing-xl);
+}
+
 .shell-stream-scroll,
 .shell-conversation-footer {
 	padding-inline: 40px;

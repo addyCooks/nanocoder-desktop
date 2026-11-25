@@ -17,6 +17,48 @@ const render = (items: TranscriptItem[], running = false) =>
 		}),
 	);
 
+test('user and assistant rows expose copy controls without changing message text or composer labels', t => {
+	const first = renderToStaticMarkup(
+		createElement(ConversationStream, {
+			transcript: {
+				...emptyTranscript,
+				items: [
+					{kind: 'user', text: 'original user text', rowId: 'user-row'},
+					{kind: 'agent', text: 'original **agent** text', rowId: 'agent-row'},
+				],
+			},
+			running: false,
+			onCopy() {},
+		}),
+	);
+	t.is(first.match(/aria-label="copy text"/g)?.length, 2);
+	t.false(first.includes('aria-label="copy message"'));
+	t.false(first.includes('>copy<'));
+});
+
+test('empty streaming rows have no copy action and attachment summaries remain separate display text', t => {
+	const html = renderToStaticMarkup(
+		createElement(ConversationStream, {
+			transcript: {
+				...emptyTranscript,
+				items: [
+					{
+						kind: 'user',
+						text: 'original',
+						attachmentSummary: ['attached: fixture.ts'],
+					},
+					{kind: 'agent', text: ''},
+				],
+			},
+			running: true,
+			onCopy() {},
+		}),
+	);
+	t.is(html.match(/aria-label="copy text"/g)?.length, 1);
+	t.true(html.includes('<div class="stream-plain">original</div>'));
+	t.true(html.includes('<div class="stream-plain">attached: fixture.ts</div>'));
+});
+
 test('user and agent author labels show only reported token and cost metadata (CHAT-05 CHAT-19)', t => {
 	const html = render([
 		{kind: 'user', text: 'question'},
@@ -56,13 +98,16 @@ test('assistant-less turns show reported usage in their own turn row (CHAT-19)',
 	const html = render(transcript.items);
 	t.regex(
 		html,
-		/<li class="gate-message-agent">(?:(?!<\/li>).)*\+17 tok(?:(?!<\/li>).)*completed(?:(?!<\/li>).)*settled answer(?:(?!<\/li>).)*<\/li>/,
+		/<li class="gate-message-agent"[^>]*>(?:(?!<\/li>).)*\+17 tok(?:(?!<\/li>).)*completed(?:(?!<\/li>).)*settled answer(?:(?!<\/li>).)*<\/li>/,
 	);
 	t.regex(
 		html,
-		/<li class="gate-message-turn-metadata">(?:(?!<\/li>).)*turn details(?:(?!<\/li>).)*\+31 tok(?:(?!<\/li>).)*failed(?:(?!<\/li>).)*<\/li>/,
+		/<li class="gate-message-turn-metadata"[^>]*>(?:(?!<\/li>).)*turn details(?:(?!<\/li>).)*\+31 tok(?:(?!<\/li>).)*failed(?:(?!<\/li>).)*<\/li>/,
 	);
-	t.notRegex(html, /<li class="gate-message-agent">(?:(?!<\/li>).)*\+31 tok/);
+	t.notRegex(
+		html,
+		/<li class="gate-message-agent"[^>]*>(?:(?!<\/li>).)*\+31 tok/,
+	);
 });
 
 test('a cursor belongs only to the currently streaming last agent message (CHAT-05)', t => {

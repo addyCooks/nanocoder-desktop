@@ -1,5 +1,10 @@
 import * as React from 'react';
-import {AgentMarkdown, LocalUrlContext} from '@/renderer/agent-markdown';
+import {
+	AgentMarkdown,
+	CopyContext,
+	LocalUrlContext,
+} from '@/renderer/agent-markdown';
+import {Icon} from '@/renderer/icons';
 import {
 	clockTime,
 	dayLabel,
@@ -12,6 +17,7 @@ import {
 	currentTurnStart,
 	type Transcript,
 	type TranscriptItem,
+	transcriptRowId,
 } from '@/renderer/transcript';
 import type {StreamMetadata, StreamToolDetails} from '@/shared/ipc';
 
@@ -169,6 +175,24 @@ function AgentLabel({at}: {at?: number}) {
 	);
 }
 
+function CopyMessage({text}: {text: string}) {
+	const copy = React.useContext(CopyContext);
+	if (!copy || !text.length) return null;
+	return (
+		<div className="stream-message-actions">
+			<button
+				type="button"
+				className="stream-copy"
+				aria-label="copy text"
+				title="copy text"
+				onClick={() => copy(text)}
+			>
+				<Icon name="copy" size={14} />
+			</button>
+		</div>
+	);
+}
+
 const StreamRow = React.memo(function StreamRow({
 	item,
 	runPosition,
@@ -208,13 +232,20 @@ const StreamRow = React.memo(function StreamRow({
 							</>
 						)}
 					</div>
+					<CopyMessage text={item.text} />
 					<div className="stream-plain">{item.text}</div>
+					{item.attachmentSummary?.length ? (
+						<div className="stream-plain">
+							{item.attachmentSummary.join('\n')}
+						</div>
+					) : null}
 				</>
 			);
 			break;
 		case 'agent':
 			content = (
 				<>
+					<CopyMessage text={item.text} />
 					<ReportedMetadata metadata={item.metadata} />
 					<AgentMarkdown text={item.text} />
 					{streaming && (
@@ -425,6 +456,7 @@ export function ConversationStream({
 	stopReason,
 	failureNotice,
 	onOpenLocalUrl,
+	onCopy,
 	now = Date.now,
 }: {
 	transcript: Transcript;
@@ -436,6 +468,7 @@ export function ConversationStream({
 	stopReason?: string;
 	failureNotice?: React.ReactNode;
 	onOpenLocalUrl?: (url: string) => void;
+	onCopy?: (text: string) => void;
 	now?: () => number;
 }) {
 	const stop = React.useRef(onStopTurn);
@@ -479,116 +512,114 @@ export function ConversationStream({
 			)
 		: 0;
 	return (
-		<LocalUrlContext.Provider value={onOpenLocalUrl}>
-			<section
-				className="conversation-stream"
-				data-stop-reason={stopReason}
-				data-empty={transcript.items.length === 0 || undefined}
-			>
-				{transcript.items.length > 0 &&
-					(dayTime === undefined ? (
-						<p className="stream-day-label" title={untimedHistoryTitle}>
-							saved history
-						</p>
-					) : (
-						<p className="stream-day-label">{dayLabel(dayTime, now())}</p>
-					))}
-				<ol className="gate-transcript" aria-label="conversation">
-					{transcript.items.map((item, index) => {
-						if (isSubagentRun(item)) runPosition++;
-						const base =
-							'id' in item
-								? `${item.kind}:${item.id}`
-								: 'messageId' in item && item.messageId
-									? `${item.kind}:${item.messageId}:${index}`
-									: `${item.kind}:${index}`;
-						const occurrence = keyOccurrences.get(base) ?? 0;
-						keyOccurrences.set(base, occurrence + 1);
-						const key = `${base}:${occurrence}`;
-						const label = labels.get(index);
-						const row = (
-							<StreamRow
-								key={key}
-								item={item}
-								runPosition={runPosition}
-								runCount={runCount}
-								active={running && index > turnStart}
-								outcome={index > turnStart ? outcome : undefined}
-								stopping={stopping || localStopping}
-								onStopTurn={onStopTurn ? stopTurn : undefined}
-								group={toolGroup(transcript.items, index)}
-								notice={index === lastFailure ? failureNotice : undefined}
-								streaming={
-									running &&
-									(item.kind === 'agent' || item.kind === 'thought') &&
-									index === transcript.items.length - 1
-								}
-							/>
-						);
-						return label ? (
-							<React.Fragment key={key}>
-								<AgentLabel at={label.at} />
-								{row}
-							</React.Fragment>
+		<CopyContext.Provider value={onCopy}>
+			<LocalUrlContext.Provider value={onOpenLocalUrl}>
+				<section
+					className="conversation-stream"
+					data-stop-reason={stopReason}
+					data-empty={transcript.items.length === 0 || undefined}
+				>
+					{transcript.items.length > 0 &&
+						(dayTime === undefined ? (
+							<p className="stream-day-label" title={untimedHistoryTitle}>
+								saved history
+							</p>
 						) : (
-							row
-						);
-					})}
-				</ol>
-				<StreamAnnouncements
-					transcript={transcript}
-					running={running}
-					outcome={outcome}
-				/>
-				{stopError && <p role="alert">{stopError}</p>}
-				{stopReason !== undefined && stopReason !== 'end_turn' && (
-					<p className="stream-turn-note">
-						{stopReason === 'cancelled'
-							? 'turn interrupted'
-							: 'turn stopped early'}
-					</p>
-				)}
-				{transcript.mode && (
-					<p className="stream-session">reported mode: {transcript.mode}</p>
-				)}
-				{!!transcript.config?.length && (
-					<details className="stream-session">
-						<summary>reported configuration</summary>
-						<dl>
-							{transcript.config.map(option => (
-								<React.Fragment key={option.id}>
-									<dt>{option.name}</dt>
-									<dd>{String(option.value)}</dd>
+							<p className="stream-day-label">{dayLabel(dayTime, now())}</p>
+						))}
+					<ol className="gate-transcript" aria-label="conversation">
+						{transcript.items.map((item, index) => {
+							if (isSubagentRun(item)) runPosition++;
+							const base = transcriptRowId(item, index);
+							const occurrence = keyOccurrences.get(base) ?? 0;
+							keyOccurrences.set(base, occurrence + 1);
+							const key = `${base}:${occurrence}`;
+							const label = labels.get(index);
+							const row = (
+								<StreamRow
+									key={key}
+									item={item}
+									runPosition={runPosition}
+									runCount={runCount}
+									active={running && index > turnStart}
+									outcome={index > turnStart ? outcome : undefined}
+									stopping={stopping || localStopping}
+									onStopTurn={onStopTurn ? stopTurn : undefined}
+									group={toolGroup(transcript.items, index)}
+									notice={index === lastFailure ? failureNotice : undefined}
+									streaming={
+										running &&
+										(item.kind === 'agent' || item.kind === 'thought') &&
+										index === transcript.items.length - 1
+									}
+								/>
+							);
+							return label ? (
+								<React.Fragment key={key}>
+									<AgentLabel at={label.at} />
+									{row}
 								</React.Fragment>
-							))}
-						</dl>
-					</details>
-				)}
-				{context && (
-					<div className="stream-context">
-						<p>
-							reported context: {context.used} / {context.size} tokens
-							{context.cost && (
-								<>
-									{' '}
-									· session cost: {context.cost.amount} {context.cost.currency}
-								</>
-							)}
+							) : (
+								row
+							);
+						})}
+					</ol>
+					<StreamAnnouncements
+						transcript={transcript}
+						running={running}
+						outcome={outcome}
+					/>
+					{stopError && <p role="alert">{stopError}</p>}
+					{stopReason !== undefined && stopReason !== 'end_turn' && (
+						<p className="stream-turn-note">
+							{stopReason === 'cancelled'
+								? 'turn interrupted'
+								: 'turn stopped early'}
 						</p>
-						<div
-							role="progressbar"
-							aria-label="reported context use"
-							aria-valuemin={0}
-							aria-valuemax={100}
-							aria-valuenow={percentage}
-							aria-valuetext={`${context.used} of ${context.size} reported context tokens`}
-						>
-							<span style={{width: `${percentage}%`}} />
+					)}
+					{transcript.mode && (
+						<p className="stream-session">reported mode: {transcript.mode}</p>
+					)}
+					{!!transcript.config?.length && (
+						<details className="stream-session">
+							<summary>reported configuration</summary>
+							<dl>
+								{transcript.config.map(option => (
+									<React.Fragment key={option.id}>
+										<dt>{option.name}</dt>
+										<dd>{String(option.value)}</dd>
+									</React.Fragment>
+								))}
+							</dl>
+						</details>
+					)}
+					{context && (
+						<div className="stream-context">
+							<p>
+								reported context: {context.used} / {context.size} tokens
+								{context.cost && (
+									<>
+										{' '}
+										· session cost: {context.cost.amount}{' '}
+										{context.cost.currency}
+									</>
+								)}
+							</p>
+							<div
+								role="progressbar"
+								aria-label="reported context use"
+								aria-valuemin={0}
+								aria-valuemax={100}
+								aria-valuenow={percentage}
+								aria-valuetext={`${context.used} of ${context.size} reported context tokens`}
+							>
+								<span style={{width: `${percentage}%`}} />
+							</div>
 						</div>
-					</div>
-				)}
-				{children}
-			</section>
-		</LocalUrlContext.Provider>
+					)}
+					{children}
+				</section>
+			</LocalUrlContext.Provider>
+		</CopyContext.Provider>
 	);
 }

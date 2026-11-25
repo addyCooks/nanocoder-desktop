@@ -1,7 +1,11 @@
 import test from 'ava';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AgentMarkdown, LocalUrlContext} from '@/renderer/agent-markdown';
+import {
+	AgentMarkdown,
+	CopyContext,
+	LocalUrlContext,
+} from '@/renderer/agent-markdown';
 
 const render = (text: string) =>
 	renderToStaticMarkup(createElement(AgentMarkdown, {text}));
@@ -169,4 +173,19 @@ test('TERM-05 without a browser opener even a localhost link is inert', t => {
 	const html = render('run it at http://localhost:5173/app now');
 	t.notRegex(html, /<button\b|<a\b|\shref=/);
 	t.true(html.includes('<span class="stream-markdown-link">'));
+});
+
+test('only fenced code gets an accessible copy action', t => {
+	const html = renderToStaticMarkup(
+		createElement(
+			CopyContext.Provider,
+			{value: () => {}},
+			createElement(AgentMarkdown, {
+				text: '`inline fixture`\n\n    indented fixture\n\n```\n```\n\n```ts\nconst fixture = 1;\n```',
+			}),
+		),
+	);
+	t.is(html.match(/aria-label="copy code"/g)?.length, 1);
+	t.true(html.includes('class="stream-code-block"'));
+	t.false(render('```ts\nconst fixture = 1;\n```').includes('copy code'));
 });

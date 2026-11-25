@@ -1,4 +1,4 @@
-import type {PaletteAction} from '@/renderer/overlay-model';
+import type {PaletteAction, PaletteThread} from '@/renderer/overlay-model';
 import {threadActionReason} from '@/renderer/thread-actions';
 import type {ThreadInfo} from '@/shared/ipc';
 
@@ -33,6 +33,29 @@ export function importPalette(controls: {
 	];
 }
 
+export function threadSearchPalette(controls: {
+	projectId: string | null;
+	threads: readonly ThreadInfo[];
+	activeThreadId: string | null;
+	pending: boolean;
+	onOpen(threadId: string): void;
+}): PaletteThread[] {
+	if (!controls.projectId) return [];
+	return controls.threads
+		.filter(thread => thread.projectId === controls.projectId)
+		.map(thread => ({
+			id: `thread-open-${thread.id}`,
+			label: thread.title,
+			glyph: thread.archiveState === 'archived' ? '░' : '○',
+			archived: thread.archiveState === 'archived',
+			current: thread.id === controls.activeThreadId,
+			disabledReason: controls.pending
+				? 'another thread request is pending'
+				: undefined,
+			run: () => controls.onOpen(thread.id),
+		}));
+}
+
 export function threadPalette(controls: ThreadControls): PaletteAction[] {
 	const selected =
 		controls.thread?.projectId === controls.projectId ? controls.thread : null;
@@ -65,7 +88,7 @@ export function threadPalette(controls: ThreadControls): PaletteAction[] {
 			id: 'thread-rename',
 			label: 'rename thread',
 			glyph: '▸',
-			keywords: `name chat session ${selected?.title ?? ''}`,
+			keywords: 'name chat session',
 			opensDialog: true,
 			disabledReason: reason ?? controls.renameDisabledReason,
 			run: () => {
@@ -76,7 +99,7 @@ export function threadPalette(controls: ThreadControls): PaletteAction[] {
 			id: 'thread-archive',
 			label: archived ? 'archive thread' : 'unarchive thread',
 			glyph: '░',
-			keywords: `history chat session ${selected?.title ?? ''}`,
+			keywords: 'history chat session',
 			opensDialog: archived,
 			disabledReason: reason,
 			run: () => {

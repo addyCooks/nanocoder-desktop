@@ -15,7 +15,7 @@ export async function startFolderFromPalette(page: Page): Promise<void> {
 	});
 	const command = page.getByRole('option', {name: /open a project folder/});
 	const search = page.getByRole('combobox', {
-		name: 'find a command',
+		name: 'find a thread or action',
 		exact: true,
 	});
 	await trigger.click();
@@ -23,7 +23,7 @@ export async function startFolderFromPalette(page: Page): Promise<void> {
 	await expect(command).not.toHaveAttribute('aria-disabled', 'true');
 	await expect(search).toHaveAttribute(
 		'aria-activedescendant',
-		'palette-option-open-folder',
+		'palette-option-action-open-folder',
 	);
 	await page.keyboard.press('Enter');
 	await expect(palette).toBeHidden();
@@ -71,7 +71,7 @@ export async function openFolderFromPalette(
 	});
 	const command = page.getByRole('option', {name: /open a project folder/});
 	const search = page.getByRole('combobox', {
-		name: 'find a command',
+		name: 'find a thread or action',
 		exact: true,
 	});
 	await trigger.click();

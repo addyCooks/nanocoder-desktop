@@ -466,6 +466,9 @@ test('keyboard controls remain reachable and visibly focused inside the stream i
 				page.getByRole('button', {name: /^switch to (light|dark) theme$/}),
 				palette,
 				stream,
+				...(await stream
+					.getByRole('button', {name: 'copy text', exact: true})
+					.all()),
 				input,
 				mode,
 				page.getByRole('button', {
@@ -478,6 +481,20 @@ test('keyboard controls remain reachable and visibly focused inside the stream i
 			await focusOrder[0].focus();
 			for (const [index, control] of focusOrder.entries()) {
 				if (index > 0) await page.keyboard.press('Tab');
+				if (control === input) {
+					const latest = page.getByRole('button', {
+						name: 'latest',
+						exact: true,
+					});
+					if (
+						await latest.evaluateAll(elements =>
+							elements.some(element => element === document.activeElement),
+						)
+					) {
+						await expect(latest).toHaveCSS('outline-width', '2px');
+						await page.keyboard.press('Tab');
+					}
+				}
 				await expect(control).toBeFocused();
 				if (control === input) {
 					await expect(input).toHaveCSS('outline-style', 'none');
@@ -492,6 +509,15 @@ test('keyboard controls remain reachable and visibly focused inside the stream i
 					await input.fill('fixture keyboard check');
 				}
 			}
+			const atEnd = () =>
+				stream.evaluate(
+					element =>
+						element.scrollHeight - element.scrollTop - element.clientHeight <=
+						2,
+				);
+			const latest = page.getByRole('button', {name: 'latest', exact: true});
+			if (await latest.count()) await latest.click();
+			await expect.poll(atEnd).toBe(true);
 			await page.keyboard.press('Enter');
 			const permission = page.getByRole('region', {name: 'permission request'});
 			const allow = permission.getByRole('button', {
@@ -500,6 +526,7 @@ test('keyboard controls remain reachable and visibly focused inside the stream i
 			});
 			const deny = permission.getByRole('button', {name: 'Deny', exact: true});
 			await expect(allow).toBeVisible();
+			await expect.poll(atEnd).toBe(true);
 			await allow.focus();
 			await page.keyboard.press('Tab');
 			await expect(deny).toBeFocused();

@@ -9,12 +9,14 @@ import {
 	chips,
 	clearAttachments,
 	labelFor,
+	MAX_ATTACHMENTS,
 	removeAttachment,
 } from '@/renderer/attachments';
 import {BackgroundProjects} from '@/renderer/background-projects';
 import {BrowserPanel} from '@/renderer/browser-panel';
 import {Composer} from '@/renderer/composer';
 import {ConversationStream} from '@/renderer/conversation-stream';
+import {copyContent} from '@/renderer/copy-content';
 import {Icon} from '@/renderer/icons';
 import {
 	commandModifier,
@@ -53,7 +55,11 @@ import {
 import {TerminalPanel} from '@/renderer/terminal-panel';
 import {threadComposerState} from '@/renderer/thread-composer-state';
 import {type ThreadDialogData, ThreadDialogs} from '@/renderer/thread-dialogs';
-import {importPalette, threadPalette} from '@/renderer/thread-palette';
+import {
+	importPalette,
+	threadPalette,
+	threadSearchPalette,
+} from '@/renderer/thread-palette';
 import {ThreadRail} from '@/renderer/thread-rail';
 import {
 	ThreadRecoveryNotice,
@@ -214,7 +220,11 @@ export function App() {
 		currentProject?.trusted === true;
 	const inspectorOpen = browserTabOpen || filesTabOpen;
 	const files = useFiles(projectId, filesTabOpen);
-	const reviewPanel = useReview(projectId, filesTabOpen);
+	const reviewPanel = useReview(
+		projectId,
+		filesTabOpen,
+		inspector === 'review',
+	);
 	const browser = useBrowser(projectId);
 	const modalOpen = useModalOpen();
 	const [attachments, setAttachments] = useState<AttachmentStore>({});
@@ -229,7 +239,9 @@ export function App() {
 			? 'this thread is archived'
 			: thread.runState === 'view-only'
 				? 'this thread is view-only'
-				: null;
+				: attached.length >= MAX_ATTACHMENTS
+					? 'remove an attachment before adding another (20 maximum)'
+					: null;
 	const failed =
 		thread?.runState === 'failed' ||
 		(turn !== null && !turn.ok && thread?.runState !== 'ready');
@@ -257,6 +269,12 @@ export function App() {
 	const retryScope = useRef<string | null>(null);
 	const retrying = useRef(false);
 	const [overlayOpen, setOverlayOpen] = useState(false);
+	const paletteFocus = useRef<{
+		projectId: string | null;
+		threadId: string;
+		settled: boolean;
+	} | null>(null);
+	const [, setPaletteFocusRevision] = useState(0);
 	const overlays = useRef<OverlayHandle>(null);
 	// What is happening in other projects, kept apart from the one in view (CHAT-22).
 	const activity = useProjectActivity(id => void projectControls.onOpen(id));
@@ -319,6 +337,50 @@ export function App() {
 	}, [sending, cancellation]);
 
 	const scopeKey = `${projectId ?? ''}\n${workspace.activeThreadId ?? ''}`;
+	useEffect(() => {
+		const request = paletteFocus.current;
+		if (!request) return;
+		if (request.projectId !== projectId) {
+			paletteFocus.current = null;
+			return;
+		}
+		if (
+			!request.settled ||
+			overlayOpen ||
+			document.querySelector('dialog:modal')
+		)
+			return;
+		if (
+			request.threadId !== workspace.activeThreadId ||
+			transcript.permissions.length
+		) {
+			paletteFocus.current = null;
+			return;
+		}
+		if (workspace.pending || workspace.loading) return;
+		const target = editable
+			? composerInput.current
+			: document.querySelector<HTMLElement>('.shell-stream-scroll');
+		if (
+			!target ||
+			!target.getClientRects().length ||
+			(target instanceof HTMLTextAreaElement && target.disabled)
+		)
+			return;
+		target.focus();
+		if (document.activeElement === target) paletteFocus.current = null;
+	});
+	useEffect(() => {
+		const cancel = () => {
+			paletteFocus.current = null;
+		};
+		document.addEventListener('pointerdown', cancel, true);
+		document.addEventListener('keydown', cancel, true);
+		return () => {
+			document.removeEventListener('pointerdown', cancel, true);
+			document.removeEventListener('keydown', cancel, true);
+		};
+	}, []);
 	useEffect(() => {
 		if (!retryFocus.current) return;
 		const composer = composerInput.current;
@@ -429,6 +491,16 @@ export function App() {
 		setAttachments(current => addAttachment(current, attachKey, item));
 		overlays.current?.notify(`attached ${labelFor(item)} to your next message`);
 	};
+	const copy = useCallback((text: string) => {
+		void copyContent(
+			text,
+			async value => {
+				const result = await window.desktop.writeClipboard({text: value});
+				if (!result.ok) throw new Error('clipboard unavailable');
+			},
+			message => overlays.current?.notify(message),
+		);
+	}, []);
 	const openInBrowser = (url: string) => {
 		showPanel('browser');
 		void browser.open(url);
@@ -484,6 +556,35 @@ export function App() {
 		)?.id ??
 		null;
 	const newShortcut = `${commandModifier(navigator.platform)}N`;
+	const openThread = (id: string) => {
+		if (
+			runningThreadId &&
+			id !== runningThreadId &&
+			id !== workspace.activeThreadId
+		)
+			openOverlay({kind: 'other-thread', threadId: runningThreadId});
+		setImportFor(null);
+		return controls.open(id);
+	};
+	const openPaletteThread = (id: string) => {
+		const target = workspace.threads.find(row => row.id === id);
+		if (!target) return;
+		if (window.matchMedia('(max-width: 840px)').matches) setInspector(null);
+		const request = {
+			projectId,
+			threadId: id,
+			settled: false,
+		};
+		paletteFocus.current = request;
+		void openThread(id).then(opened => {
+			if (paletteFocus.current !== request) return;
+			if (!opened) paletteFocus.current = null;
+			else {
+				request.settled = true;
+				setPaletteFocusRevision(revision => revision + 1);
+			}
+		});
+	};
 	const onNew = () => {
 		setImportFor(null);
 		openOverlay({kind: 'new-thread'});
@@ -677,6 +778,13 @@ export function App() {
 					<ThreadDialogs request={request} data={threadDialogData} api={api} />
 				)
 			}
+			threads={threadSearchPalette({
+				projectId,
+				threads: workspace.threads,
+				activeThreadId: workspace.activeThreadId,
+				pending,
+				onOpen: openPaletteThread,
+			})}
 			actions={[
 				...threadPalette({
 					projectId,
@@ -941,17 +1049,7 @@ export function App() {
 							newThreadShortcut={newShortcut}
 							onNew={onNew}
 							onOpen={id => {
-								if (
-									runningThreadId &&
-									id !== runningThreadId &&
-									id !== workspace.activeThreadId
-								)
-									openOverlay({
-										kind: 'other-thread',
-										threadId: runningThreadId,
-									});
-								setImportFor(null);
-								void controls.open(id);
+								void openThread(id);
 							}}
 							onOpenArchives={opener => openDialog('archives', opener)}
 							onOpenImport={openImportPage}
@@ -1003,6 +1101,10 @@ export function App() {
 				composerPlacement={
 					centredComposer && !importOpen ? 'centred' : 'bottom'
 				}
+				followKey={
+					thread && !importOpen ? `${projectId ?? ''}:${thread.id}` : undefined
+				}
+				followContent={transcript.items}
 				approvalShelf={
 					thread && (
 						<ApprovalRequests
@@ -1117,6 +1219,7 @@ export function App() {
 						}
 						running={sending}
 						onOpenLocalUrl={openInBrowser}
+						onCopy={copy}
 						onStopTurn={cancel}
 						stopping={stopping}
 						stopReason={turn?.ok ? turn.value.stopReason : undefined}

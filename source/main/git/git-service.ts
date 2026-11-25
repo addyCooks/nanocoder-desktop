@@ -284,7 +284,17 @@ export class GitService {
 		if (!input) throw new IpcFailure('VALIDATION', 'Choose a file to compare');
 		const status = await this.status(projectId);
 		if (!status.available) throw new IpcFailure('UNAVAILABLE', status.reason);
-		const entry = status.entries.find(candidate => candidate.path === input);
+		const entries = status.entries.filter(
+			candidate => candidate.path === input,
+		);
+		const entry =
+			entries.find(candidate =>
+				staged
+					? candidate.staged !== 'none'
+					: candidate.unstaged !== 'none' ||
+						candidate.untracked ||
+						candidate.conflicted,
+			) ?? entries[0];
 		if (!entry)
 			return {
 				path: input,

@@ -13,10 +13,12 @@ export type TranscriptItem = (
 			kind: 'user' | 'agent';
 			text: string;
 			messageId?: string;
+			rowId?: string;
+			attachmentSummary?: string[];
 			// Epoch ms seen live by this renderer; never persisted or estimated.
 			at?: number;
 	  }
-	| {kind: 'thought'; text: string; messageId?: string}
+	| {kind: 'thought'; text: string; messageId?: string; rowId?: string}
 	| {kind: 'turn-metadata'}
 	| {kind: 'failure'; text: string}
 	| {
@@ -100,11 +102,29 @@ export function currentTurnStart(items: readonly TranscriptItem[]): number {
 	return -1;
 }
 
-export function addUserMessage(
-	transcript: Transcript,
-	text: string,
-): Transcript {
-	return {...transcript, items: [...transcript.items, {kind: 'user', text}]};
+function fingerprint(text: string): string {
+	let hash = 2166136261;
+	for (let index = 0; index < text.length; index++)
+		hash = Math.imul(hash ^ text.charCodeAt(index), 16777619);
+	return `${(hash >>> 0).toString(36)}-${text.length.toString(36)}`;
+}
+
+function fallbackRowId(kind: string, index: number, text: string): string {
+	return `${kind}:${index}:${fingerprint(text)}`;
+}
+
+export function transcriptRowId(item: TranscriptItem, index: number): string {
+	if ('id' in item && item.id !== null) return `${item.kind}:${item.id}`;
+	if ('messageId' in item && item.messageId)
+		return `${item.kind}:${item.messageId}`;
+	if ('rowId' in item && item.rowId) return `${item.kind}:${item.rowId}`;
+	const text =
+		'text' in item && typeof item.text === 'string'
+			? item.text
+			: 'title' in item && typeof item.title === 'string'
+				? item.title
+				: '';
+	return fallbackRowId(item.kind, index, text);
 }
 
 function upsert(
@@ -157,7 +177,12 @@ function applyContent(
 				: {
 						kind,
 						text: event.text,
-						...(event.messageId ? {messageId: event.messageId} : {}),
+						...(event.type === 'user' && event.attachmentSummary
+							? {attachmentSummary: event.attachmentSummary}
+							: {}),
+						...(event.messageId
+							? {messageId: event.messageId}
+							: {rowId: fallbackRowId('live', items.length, event.text)}),
 						...(at !== undefined && kind !== 'thought' ? {at} : {}),
 					};
 			return {
@@ -395,6 +420,34 @@ function sameMessage(earlier: Message, item: Message): boolean {
 	if (earlier.messageId !== undefined || item.messageId !== undefined)
 		return earlier.messageId === item.messageId;
 	return earlier.text === item.text;
+}
+
+export function carryMessageRows(
+	previous: Transcript,
+	next: Transcript,
+): Transcript {
+	let changed = false;
+	const items = next.items.map((item, index) => {
+		const earlier = previous.items[index];
+		if (
+			(item.kind !== 'user' &&
+				item.kind !== 'agent' &&
+				item.kind !== 'thought') ||
+			item.messageId
+		)
+			return item;
+		const rowId =
+			earlier?.kind === item.kind &&
+			earlier.messageId === item.messageId &&
+			earlier.text === item.text &&
+			earlier.rowId
+				? earlier.rowId
+				: fallbackRowId('snapshot', index, item.text);
+		if (item.rowId === rowId) return item;
+		changed = true;
+		return {...item, rowId};
+	});
+	return changed ? {...next, items} : next;
 }
 
 export function carryMessageTimes(

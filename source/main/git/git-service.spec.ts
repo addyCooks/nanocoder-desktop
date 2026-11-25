@@ -21,7 +21,7 @@ import type {ProjectInfo} from '@/shared/ipc';
 
 // Test setup uses Git directly; the service under test never does.
 const git = (cwd: string, ...args: string[]) =>
-	execFileSync('git', args, {
+	execFileSync('git', ['-c', 'core.hooksPath=', ...args], {
 		cwd,
 		encoding: 'utf8',
 		env: {
@@ -121,6 +121,22 @@ test('GIT-02 names with spaces and newlines come back exactly', async t => {
 			result.entries.some(entry => entry.path === name && entry.untracked),
 			name,
 		);
+});
+
+test('GIT-04 a staged deletion with an untracked replacement has independent diffs', async t => {
+	const f = fixture(t);
+	f.write('a.ts', 'old tracked content\n');
+	f.commit();
+	git(f.root, 'rm', '--cached', 'a.ts');
+	f.write('a.ts', 'new untracked content\n');
+	await status(f);
+	const unstaged = await f.service.diff('project', 'a.ts', false);
+	t.is(unstaged.kind, 'text');
+	if (unstaged.kind === 'text')
+		t.regex(unstaged.diff, /\+new untracked content/);
+	const staged = await f.service.diff('project', 'a.ts', true);
+	t.is(staged.kind, 'text');
+	if (staged.kind === 'text') t.regex(staged.diff, /-old tracked content/);
 });
 
 test('GIT-13 a folder that is not a repository, and a missing Git, give a reason', async t => {

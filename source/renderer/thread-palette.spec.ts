@@ -1,6 +1,10 @@
 import test from 'ava';
-import {runAction} from '@/renderer/overlay-model';
-import {importPalette, threadPalette} from '@/renderer/thread-palette';
+import {filterActions, runAction} from '@/renderer/overlay-model';
+import {
+	importPalette,
+	threadPalette,
+	threadSearchPalette,
+} from '@/renderer/thread-palette';
 import type {ThreadInfo} from '@/shared/ipc';
 
 const thread: ThreadInfo = {
@@ -145,4 +149,66 @@ test('rename receives only the thread id, never palette focus or thread authorit
 	});
 	t.true(runAction(actions[1]));
 	t.deepEqual(received, [thread.id]);
+});
+
+test('rename and archive keep their own keywords, never the selected title', t => {
+	const {actions} = fixture();
+	t.is(actions[1]?.keywords, 'name chat session');
+	t.is(actions[2]?.keywords, 'history chat session');
+	t.deepEqual(filterActions(actions, 'fixture thread'), []);
+	t.deepEqual(
+		filterActions(actions, 'rename').map(item => item.id),
+		['thread-rename'],
+	);
+	t.deepEqual(
+		filterActions(actions, 'archive').map(item => item.id),
+		['thread-archive'],
+	);
+});
+
+test('thread search uses current-project metadata and marks the selected thread', t => {
+	const opened: string[] = [];
+	const archived = {
+		...thread,
+		id: '33333333-3333-4333-8333-333333333333',
+		title: 'archived fixture',
+		archiveState: 'archived' as const,
+	};
+	const results = threadSearchPalette({
+		projectId: thread.projectId,
+		threads: [
+			thread,
+			archived,
+			{...thread, id: 'other-project', projectId: 'other-project'},
+		],
+		activeThreadId: thread.id,
+		pending: false,
+		onOpen: id => opened.push(id),
+	});
+	t.deepEqual(
+		results.map(result => ({
+			id: result.id,
+			archived: result.archived,
+			current: result.current,
+		})),
+		[
+			{id: `thread-open-${thread.id}`, archived: false, current: true},
+			{id: `thread-open-${archived.id}`, archived: true, current: false},
+		],
+	);
+	t.true(runAction(results[0]));
+	t.true(runAction(results[1]));
+	t.deepEqual(opened, [thread.id, archived.id]);
+});
+
+test('pending thread requests disable search results without hiding them', t => {
+	const [result] = threadSearchPalette({
+		projectId: thread.projectId,
+		threads: [thread],
+		activeThreadId: null,
+		pending: true,
+		onOpen: () => t.fail('a pending open must not run'),
+	});
+	t.is(result?.disabledReason, 'another thread request is pending');
+	t.false(runAction(result));
 });

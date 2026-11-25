@@ -28,6 +28,7 @@ Details are in [`planning/architecture.md`](planning/architecture.md); the secur
 | `source/main/security.ts` | Origin checks, renderer file resolution, Content Security Policy |
 | `source/main/paths.ts` | Shared native realpath canonicalisation (symlinks and volume case aliases) and component containment |
 | `source/main/ipc/handle-request.ts` | Sender check, schema validation and the result shape for every IPC call |
+| `source/main/ipc/clipboard.ts`, `source/renderer/copy-content.ts` | Strict write-only bounded clipboard IPC and original-text copy/refusal projection; no clipboard-read bridge |
 | `source/main/ipc/index.ts` | Registers the IPC handlers |
 | `source/main/terminal/`, `source/main/ipc/terminal.ts`, `source/shared/terminal.ts` | Isolated utility-process PTY, main-owned active-project lifecycle, bounded memory-only output and strict typed terminal IPC (`TERM-01` to `TERM-10`) |
 | `source/main/terminal/agent-command.ts` | Passive bounded last-command and accepted-option display projection (`TERM-12`), never a terminal or permission capability |
@@ -55,6 +56,7 @@ Details are in [`planning/architecture.md`](planning/architecture.md); the secur
 | `source/main/git/agent-changes.ts`, `source/main/nanocoder/timeline.ts`, `source/main/git/agent-changes.acp.ts` | Phase 2.9 agent changes view: bounded parsing of Nanocoder's snapshot list and `_nanocoder/timeline/read` answers, the last turn's baseline per file, and a diff of that text with the file through `GitService.compare` (`git diff --no-index`, snapshot on stdin, nothing written); falls back to the full diff with a reason; off unless safe probes confirm the methods (`GIT-09`, `GIT-10`, `DEC-44`) |
 | `source/main/git/turn-tracker.ts`, `source/main/git/review-service.ts` | Last-turn touched labels from edit tool calls and commits made during a turn (`GIT-05`, `GIT-12`) |
 | `source/renderer/files-controller.ts`, `source/renderer/review-controller.ts`, `source/renderer/diff-parse.ts` | Lazy tree and review state with stale-answer guards, tree and diff keyboard models, unified-diff parsing |
+| `source/renderer/diff-virtual.ts`, `source/renderer/review-interaction.ts` | Capped full-model row coordinates, ordered viewport/pinned keyboard rows, one row-height contract, and memory-only project/path/side-scoped drafts with exact-diff range invalidation and shared IPC comment bounds |
 | `source/renderer/workbench.tsx`, `source/renderer/file-tree.tsx`, `source/renderer/file-preview.tsx`, `source/renderer/review-panel.tsx`, `source/renderer/code-editor.ts` | The files and review panel; CodeMirror loads lazily inside a shadow root so the strict style policy holds |
 | `source/renderer/attachments.ts` | Per-thread, in-memory prompt attachments that ride with one message and are then forgotten |
 | `source/main/ipc/workspace-services.ts` | Main-only project and thread service contracts |
@@ -104,6 +106,7 @@ Details are in [`planning/architecture.md`](planning/architecture.md); the secur
 | `source/main/threads/thread-history-observer.ts` | Scoped atomic live/replay observation, disposable staging, strict slot/epoch guards and post-commit-only observer activation |
 | `source/main/threads/thread-history-mapping.ts`, `source/main/threads/thread-live-mapping.ts`, `source/main/threads/thread-sequence.ts`, `planning/durable-replay.md` | Structural replay and live identities through one main-only batch allocator, bounded session replay and opaque readiness gates |
 | `source/renderer/transcript.ts`, `source/renderer/stream-batcher.ts` | Ordered immutable transcript patches and cancellable 16ms renderer batching |
+| `source/renderer/transcript-follow.ts` | Memory-only thread-scoped follow state; `AppShell` observes content and viewport resizing and keeps reader scroll intent separate |
 | `source/renderer/conversation-stream.tsx`, `source/renderer/agent-markdown.tsx`, `source/renderer/stream-commands.tsx` | U.4 stream rows, isolated inert Markdown and advertised-command draft suggestions |
 | `source/renderer/stream-announcements.tsx` | A11Y-04/05 clock-injected lifecycle/finished-response speech and one persistent modal-aware polite live node |
 | `source/renderer/composer.tsx`, `source/renderer/project-controls.ts`, `source/renderer/use-project-controls.ts` | Mounted multiline composer, native mode/default disclosure and scoped acknowledged project-control state; no renderer live-mode cache |

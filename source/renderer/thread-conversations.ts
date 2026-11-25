@@ -4,6 +4,7 @@ import {
 } from '@/renderer/stream-batcher';
 import {
 	applyEvents,
+	carryMessageRows,
 	carryMessageTimes,
 	emptyTranscript,
 	settleSubagentTurn,
@@ -190,7 +191,10 @@ export function createThreadConversations(options: {
 			const previous = view(threadId).transcript;
 			const transcript = carryMessageTimes(
 				previous,
-				applyEvents(emptyTranscript, snapshot.events),
+				carryMessageRows(
+					previous,
+					applyEvents(emptyTranscript, snapshot.events),
+				),
 			);
 			const prefix = {
 				...transcript,
