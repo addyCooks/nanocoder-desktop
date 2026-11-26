@@ -11,7 +11,7 @@
 		"source/**/*.acp.ts"
 	],
 	"project": ["source/**/*.{ts,tsx}", "e2e/**/*.ts"],
-	"ignoreBinaries": ["semgrep", "dpkg", "apt-get", "hdiutil", "sudo"],
+	"ignoreBinaries": ["semgrep", "hdiutil"],
 	"ignoreExportsUsedInFile": {
 		"interface": true,
 		"type": true
