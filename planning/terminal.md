@@ -82,8 +82,11 @@ teardown. The mirror looks again only when a change involves a style element,
 skips re-parsing a sheet whose text is unchanged, and reassigns the document's
 sheet list only when the set changes, so ordinary output writes neither re-parse
 CSS nor restyle the document.
-The policy is unchanged. The browser still logs one blocked inline style
-message for each element when the terminal opens. Without the mirror the
+The policy is unchanged. The browser still logs a blocked inline style message
+each time xterm writes one of those elements, which is more than once per
+element: about a dozen when the terminal opens, more when the shell starts, the
+theme or window size changes or the terminal is cleared, and none for ordinary
+output. They are expected and not a sign of a fault. Without the mirror the
 cursor is not shown at all. The end-to-end test checks that ANSI red, the green
 background and the cursor use their design tokens in both themes, that no
 `<style>` element lives outside the terminal, and that the selection and
