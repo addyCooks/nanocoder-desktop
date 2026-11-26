@@ -128,6 +128,32 @@ test('SEC-03 FILE-08 files outside the project, in .git, binary, oversized or mi
 	}
 });
 
+test('FILE-08 a refusal keeps the capitals of encoding names and units (P4-01)', async t => {
+	const f = fixture(t);
+	writeFileSync(
+		path.join(f.root, 'latin.txt'),
+		Buffer.from([0x63, 0xe9, 0x66]),
+	);
+	writeFileSync(path.join(f.root, 'huge.txt'), 'x'.repeat(1_048_577));
+	for (const [name, text] of [
+		[
+			'latin.txt',
+			/not valid UTF-8 and may use another encoding such as Latin-1/,
+		],
+		['huge.txt', /files over 1 MiB/],
+	] as const) {
+		const error = await t.throwsAsync(
+			resolveAttachments(
+				f.files,
+				f.project,
+				[{kind: 'file', path: name}],
+				true,
+			),
+		);
+		t.regex(error?.message ?? '', text, name);
+	}
+});
+
 test('SEC-17 an untrusted project resolves no attachment', async t => {
 	const f = fixture(t);
 	f.project.trusted = false;

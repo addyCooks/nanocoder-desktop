@@ -57,7 +57,9 @@ export async function resolveAttachments(
 			if (preview.kind !== 'text')
 				throw refuse(
 					item.path,
-					preview.detail.replace(/\.$/u, '').toLowerCase(),
+					preview.detail
+						.replace(/\.$/u, '')
+						.replace(/^./u, c => c.toLowerCase()),
 				);
 			const {resolved} = await files.locate(project.id, item.path);
 			const uri = pathToFileURL(resolved.real).href;
