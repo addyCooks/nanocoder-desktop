@@ -165,8 +165,17 @@ test('ACP readiness is replayed on reopening after a renderer reload', async () 
 });
 
 test('the window will not shrink until the header clips, and a long project name stays out of the header actions (QA-04)', async () => {
-	await open(project(`long-${'x'.repeat(120)}`));
+	const folder = project(`long-${'x'.repeat(120)}`);
+	await open(folder);
 	try {
+		// A stopped agent has the longest footer line, so it is the one that has to fit.
+		await page.evaluate(async () => {
+			const {desktop} = window as unknown as {desktop: DesktopApi};
+			const ui = await desktop.getUiState({});
+			if (!ui.ok || !ui.value.activeProjectId) throw new Error('fixture scope');
+			await desktop.stopProject({projectId: ui.value.activeProjectId});
+		});
+		await expect(page.locator('.footer-acp--success')).toHaveCount(0);
 		await app.evaluate(({BrowserWindow}) => {
 			BrowserWindow.getAllWindows()[0].setContentSize(320, 700);
 		});
@@ -178,10 +187,22 @@ test('the window will not shrink until the header clips, and a long project name
 						?.getBoundingClientRect();
 					const name = document.querySelector('.shell-breadcrumb');
 					const identity = document.querySelector('.shell-identity');
-					if (!actions || !name || !identity)
+					const rail = document.querySelector('.shell-project-rail');
+					const shortcuts = document.querySelector(
+						'[aria-label="keyboard shortcuts"]',
+					);
+					if (!actions || !name || !identity || !rail || !shortcuts)
 						throw new Error('Missing header region');
+					const key = shortcuts.getBoundingClientRect();
+					const hit = document.elementFromPoint(
+						key.left + key.width / 2,
+						key.top + key.height / 2,
+					);
 					return {
 						narrow: innerWidth < 700,
+						// The sidebar footer fits the sidebar, so its buttons are reachable.
+						railFits: rail.scrollWidth <= rail.clientWidth,
+						shortcutsReachable: !!hit && shortcuts.contains(hit),
 						actionsFit: actions.right <= innerWidth,
 						// A name too long for its line must be clipped, not painted over the actions.
 						nameContained:
@@ -203,6 +224,8 @@ test('the window will not shrink until the header clips, and a long project name
 			)
 			.toEqual({
 				narrow: true,
+				railFits: true,
+				shortcutsReachable: true,
 				actionsFit: true,
 				nameContained: true,
 				identityRoomy: true,
